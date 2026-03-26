@@ -1,0 +1,241 @@
+=====================================
+DATEI GELADEN
+=====================================
+Zeilen: 600 
+Spalten: 186 
+
+
+=====================================
+1. GRUNDSTRUKTUR 
+=====================================
+Spaltennamen (erste 30):
+ [1] "id"               "submitdate"       "lastpage"         "startlanguage"   
+ [5] "seed"             "startdate"        "datestamp"        "refurl"          
+ [9] "timePoint"        "Einv"             "randomGroup"      "studyGroup"      
+[13] "AppName"          "Bew1"             "Bew2"             "Bew3"            
+[17] "Bew4"             "Bew5"             "Bew6"             "STG"             
+[21] "Habit[Habit1]"    "Habit[Habit2]"    "Habit[Habit3]"    "Habit[Habit4]"   
+[25] "Intention1[Int1]" "Intention2[Int2]" "Intention3[Int3]" "Att1[Att1]"      
+[29] "Att2[Att2]"       "Att3[Att3]"      
+
+Hauefigkeit studyGroup x timePoint:
+   
+     T1  T2  T3
+  1  90  90  90
+  2 110 110 110
+
+Anzahl Zeilen pro ID (sollte meist 3 sein):
+
+  3 
+200 
+
+=====================================
+2. CROSS-OVER MUSTER: PA (aus Survey berechnet) 
+=====================================
+# A tibble: 6 × 4
+  studyGroup timePoint   MET    sd
+       <dbl> <chr>     <dbl> <dbl>
+1          1 T1        1356.  789.
+2          1 T2        2301. 1401.
+3          1 T3        1393. 1183.
+4          2 T1        1451.  869.
+5          2 T2        1239.  910.
+6          2 T3        2043. 1339.
+
+Erwartung:
+- Gruppe 1: Anstieg T1 -> T2
+- Gruppe 2: Anstieg T2 -> T3
+
+=====================================
+3. CROSS-OVER MUSTER: HABIT 
+=====================================
+# A tibble: 6 × 5
+  studyGroup timePoint     n habit_mean habit_sd
+       <dbl> <chr>     <int>      <dbl>    <dbl>
+1          1 T1           90       2.28     1.12
+2          1 T2           90       2.87     1.23
+3          1 T3           90       2.44     1.02
+4          2 T1          110       2.36     1.17
+5          2 T2          110       2.35     1.14
+6          2 T3          110       2.95     1.22
+
+Erwartung:
+- Gruppe 1: Habit steigt von T1 auf T2
+- Gruppe 2: Habit steigt eher von T2 auf T3
+
+=====================================
+4. TAM-LOGIK 
+=====================================
+, , tam_present = FALSE
+
+   
+     T1  T2  T3
+  1  90  12  90
+  2 110 110  22
+
+, , tam_present = TRUE
+
+   
+     T1  T2  T3
+  1   0  78   0
+  2   0   0  88
+
+
+Erwartung:
+- studyGroup 1 nur bei T2 TAM vorhanden
+- studyGroup 2 nur bei T3 TAM vorhanden
+- sonst FALSE
+
+=====================================
+5. FILTERLOGIK PA 
+=====================================
+
+ Bew1 vs Bew2 
+        
+         FALSE TRUE
+  0 Tage     0   98
+  1 Tag    111    0
+  2 Tage   102    0
+  3 Tage    86    0
+  4 Tage    63    0
+  5 Tage    53    0
+  6 Tage    19    0
+  7 Tage     8    0
+  <NA>       0   60
+
+ Bew3 vs Bew4 
+        
+         FALSE TRUE
+  0 Tage     0   22
+  1 Tag     62    0
+  2 Tage    74    0
+  3 Tage    93    0
+  4 Tage    96    0
+  5 Tage    86    0
+  6 Tage    74    0
+  7 Tage    33    0
+  <NA>       0   60
+
+ Bew5 vs Bew6 
+        
+         FALSE TRUE
+  0 Tage     0   11
+  1 Tag     27    0
+  2 Tage    52    0
+  3 Tage    72    0
+  4 Tage    70    0
+  5 Tage   114    0
+  6 Tage   115    0
+  7 Tage    79    0
+  <NA>       0   60
+
+Erwartung:
+- Wenn Tage = 0 oder '0 Tage', dann Minuten = NA
+- Wenn Tage > 0, dann Minuten meist nicht NA
+
+=====================================
+6. KORRELATIONEN DER KERNKONSTRUKTE 
+=====================================
+                        Intention1.Int1. Control1.Con1. ActionPlan.ActionPlan1.
+Intention1.Int1.                    1.00           0.30                    0.22
+Control1.Con1.                      0.30           1.00                    0.14
+ActionPlan.ActionPlan1.             0.22           0.14                    1.00
+Habit.Habit1.                       0.13           0.24                    0.12
+                        Habit.Habit1.
+Intention1.Int1.                 0.13
+Control1.Con1.                   0.24
+ActionPlan.ActionPlan1.          0.12
+Habit.Habit1.                    1.00
+
+Grobe Erwartungen:
+- Intention mit PA positiv
+- PBC mit PA positiv
+- Habit mit PA positiv
+- Planning mit PA positiv
+
+=====================================
+7. MISSINGNESS 
+=====================================
+Gesamter Missing-Anteil: 0.408 
+# A tibble: 3 × 2
+  timePoint missing_share
+  <chr>             <dbl>
+1 T1                0.413
+2 T2                0.393
+3 T3                0.425
+
+Missingness in zentralen Variablen:
+Habit[Habit1] : 0.145 
+Intention1[Int1] : 0.148 
+TAM[WA1] : 0.723 
+
+=====================================
+8. CEILING / FLOOR 
+=====================================
+
+Verteilung: Habit[Habit1] 
+
+   1    2    3    4    5 <NA> 
+ 137  114  126  101   35   87 
+
+Verteilung: Intention1[Int1] 
+
+   1    2    3    4    5    6    7 <NA> 
+   6   24   64  107  127  116   67   89 
+
+Verteilung: Control1[Con1] 
+
+   1    2    3    4    5    6    7 <NA> 
+   1   12   66  122  149  107   59   84 
+
+Verteilung: ActionPlan[ActionPlan1] 
+
+   1    2    3    4 <NA> 
+  98  201  180   35   86 
+
+Verteilung: TAM[WA1] 
+
+   2    3    4    5    6    7 <NA> 
+   2    9   29   51   41   34  434 
+
+Interpretation:
+- Nicht fast alles auf Minimum oder Maximum
+- Leichte Ceiling-Effekte bei TAM koennen plausibel sein
+
+=====================================
+9. EINFACHE LMMs 
+=====================================
+
+LMM Habit:
+Linear mixed model fit by REML ['lmerMod']
+Formula: habit_score_check ~ studyGroup * timePoint + (1 | id)
+   Data: out
+
+REML criterion at convergence: 1579.7
+
+Scaled residuals: 
+     Min       1Q   Median       3Q      Max 
+-2.56623 -0.65855 -0.09987  0.59062  2.59352 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ id       (Intercept) 0.6672   0.8168  
+ Residual             0.6647   0.8153  
+Number of obs: 540, groups:  id, 200
+
+Fixed effects:
+                        Estimate Std. Error t value
+(Intercept)              2.27685    0.12165  18.716
+studyGroup2              0.08754    0.16403   0.534
+timePointT2              0.58894    0.12650   4.655
+timePointT3              0.14727    0.13313   1.106
+studyGroup2:timePointT2 -0.62260    0.17058  -3.650
+studyGroup2:timePointT3  0.42590    0.17808   2.392
+
+Correlation of Fixed Effects:
+            (Intr) stdyG2 tmPnT2 tmPnT3 sG2:PT2
+studyGroup2 -0.742                             
+timePointT2 -0.480  0.356                      
+timePointT3 -0.456  0.338  0.463               
+stdyGr2:PT2  0.356 -0.480 -0.742 -0.343        
+stdyGr2:PT3  0.341 -0.460 -0.346 -0.748  0.467 
