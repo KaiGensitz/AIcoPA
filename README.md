@@ -124,7 +124,7 @@ The mapping step transforms simulated data into a LimeSurvey-compatible format:
   - item-level responses  
   - metadata fields  
 
-Output file: AIcoPA_simulation_v2_5_export_like_template.xlsx
+Output file: AIcoPA_simulation_v3_export_like_template.xlsx
 
 ---
 
