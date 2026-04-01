@@ -56,7 +56,7 @@ latent_person <- MASS::mvrnorm(
 
 colnames(latent_person) <- c(
   "z_habit", "z_intention", "z_attitude", "z_injnorm", "z_descnorm",
-  "z_pbc", "z_auto_mot", "z_planning", "z_selfcontrol"
+  "z_pbc", "z_intrinsic_mot", "z_planning", "z_selfcontrol"
 )
 
 latent_person <- as_tibble(latent_person)
@@ -100,9 +100,21 @@ pbc_mean       <- 4.8
 pbc_sd         <- 1.1
 pbc_eff        <- 0.25
 
-auto_mot_mean  <- 3.8
-auto_mot_sd    <- 0.8
-auto_mot_eff   <- 0.30
+intrinsic_mot_mean    <- 3.4
+intrinsic_mot_sd      <- 0.7
+intrinsic_mot_eff     <- 0.25
+
+perceived_comp_mean   <- 3.1
+perceived_comp_sd     <- 0.7
+perceived_comp_eff    <- 0.20
+
+perceived_choice_mean <- 3.0
+perceived_choice_sd   <- 0.7
+perceived_choice_eff  <- 0.15
+
+extrinsic_mot_mean    <- 1.6
+extrinsic_mot_sd      <- 0.7
+extrinsic_mot_eff     <- 0.05
 
 planning_mean  <- 2.17
 planning_sd    <- 0.70
@@ -189,12 +201,32 @@ df <- df %>%
       trt * pbc_eff +
       rnorm(n(), 0, 0.5),
 
-    auto_mot_latent =
-      auto_mot_mean +
-      z_auto_mot * auto_mot_sd +
-      trt * auto_mot_eff +
-      carry * (0.2 * auto_mot_eff) +
+    intrinsic_mot_latent =
+      intrinsic_mot_mean +
+      z_intrinsic_mot * intrinsic_mot_sd +
+      trt * intrinsic_mot_eff +
+      carry * (0.2 * intrinsic_mot_eff) +
       rnorm(n(), 0, 0.4),
+
+    perceived_comp_latent =
+      perceived_comp_mean +
+      0.50 * z_intrinsic_mot * perceived_comp_sd +
+      trt * perceived_comp_eff +
+      carry * (0.2 * perceived_comp_eff) +
+      rnorm(n(), 0, 0.4),
+
+    perceived_choice_latent =
+      perceived_choice_mean +
+      0.40 * z_intrinsic_mot * perceived_choice_sd +
+      trt * perceived_choice_eff +
+      carry * (0.2 * perceived_choice_eff) +
+      rnorm(n(), 0, 0.4),
+
+    extrinsic_mot_latent =
+      extrinsic_mot_mean +
+      0.20 * z_intrinsic_mot * extrinsic_mot_sd -
+      0.10 * trt +
+      rnorm(n(), 0, 0.5),
 
     planning_latent =
       planning_mean +
@@ -210,14 +242,14 @@ df <- df %>%
 
     zimo_discat_latent =
       zimo_discat_mean +
-      0.25 * scale(auto_mot_latent)[,1] +
+      0.25 * scale(intrinsic_mot_latent)[,1] +
       0.20 * scale(attitude_latent)[,1] +
       trt * zimo_discat_eff +
       rnorm(n(), 0, 1.00),
 
     zimo_enjoy_latent =
       zimo_enjoy_mean +
-      0.45 * scale(auto_mot_latent)[,1] +
+      0.45 * scale(intrinsic_mot_latent)[,1] +
       0.20 * scale(attitude_latent)[,1] +
       trt * zimo_enjoy_eff +
       rnorm(n(), 0, 0.85),
@@ -268,143 +300,174 @@ df <- df %>%
 
 
 # =========================================================
-# 6) PA
+# 6) Physical Activity (primary outcome = MET-minutes/week)
 # =========================================================
+
+# A. BASELINE INACTIVE PROFILE (Kai / Nigg et al., 2024 logic)
+base_vpa_mins_pa <- 0
+base_mpa_mins_pa <- 10
+base_lpa_mins_pa <- 120
+
+intercept_met_pa <- (9 * base_vpa_mins_pa) + (5 * base_mpa_mins_pa) + (3 * base_lpa_mins_pa)  # 410
+
+# B. INTERVENTION EFFECT
+time_met_pa <- 105
+carry_met_pa <- round(0.25 * time_met_pa, 2)
+
+# C. COVARIATE ESTIMATES (Kai)
+age_met_pa <- -5
+gender_met_pa <- 150      # increase for being male
+prior_app_met_pa <- 200
+high_ses_met_pa <- 150    # here: income_high = 1
+
+# D. VARIANCE PARAMETERS
+bp_sd_met_pa <- 310
+wp_sd_met_pa <- 250
+
+# person-level random intercept for PA
+pa_random_intercept <- tibble(
+  id = 1:N,
+  rand_pa = rnorm(N, 0, bp_sd_met_pa)
+)
+
 df <- df %>%
+  left_join(pa_random_intercept, by = "id") %>%
   mutate(
-    pa_driver =
-      0.35 * scale(habit_latent)[,1] +
-      0.30 * scale(intention_latent)[,1] +
-      0.20 * scale(pbc_latent)[,1] +
-      0.15 * scale(auto_mot_latent)[,1],
+    # small psychological term so PA remains related to key constructs
+    pa_driver_small =
+      20 * scale(habit_latent)[,1] +
+      15 * scale(intention_latent)[,1] +
+      10 * scale(pbc_latent)[,1] +
+      10 * scale(intrinsic_mot_latent)[,1],
 
-    # Paper-informierte soziodemografische Einflüsse:
-    # - Männer eher höhere guideline-nahe PA
-    # - prior app use positiv
-    # - höheres income leicht positiv auf PA
-    # - Alter leicht kurvilinear / mittlere Altersgruppen günstiger
-    pa_demo_effect =
-      (-320) * female +
-      180 * prior_app +
-      120 * income_high +
-       40 * income_med +
-       220 * age_25_50 +
-       12 * age_c,
+    weeklyMET_minutes =
+      intercept_met_pa +
+      rand_pa +
+      trt * time_met_pa +
+      carry * carry_met_pa +
+      age_c * age_met_pa +
+      male * gender_met_pa +
+      prior_app * prior_app_met_pa +
+      income_high * high_ses_met_pa +
+      pa_driver_small +
+      rnorm(n(), 0, wp_sd_met_pa),
 
-    steps_day =
-      steps_base +
-      z_habit * steps_sd_between +
-      trt * steps_effect +
-      carry * (0.25 * steps_effect) +
-      pa_driver * 350 +
-      pa_demo_effect +
-      rnorm(n(), 0, steps_sd_within),
-
-    steps_day = pmax(steps_day, 0),
-    weeklyMET_minutes = round(steps_day * steps_to_met)
+    weeklyMET_minutes = pmax(round(weeklyMET_minutes), 0)
   )
 
 # =========================================================
-# 7) Survey-PA als days/minutes -- KORRIGIERT
+# 7) Derive survey-based PA variables from weekly MET-minutes
 # =========================================================
 
-# Stärkerer Verhaltenstreiber mit explizitem Interventionseffekt
-# Stärkerer Verhaltenstreiber mit explizitem Interventionseffekt
 df <- df %>%
   mutate(
-    pa_prop =
-      0.45 * scale(habit_latent)[,1] +
-      0.30 * scale(intention_latent)[,1] +
-      0.20 * scale(pbc_latent)[,1] +
-      0.15 * scale(auto_mot_latent)[,1] +
-      0.55 * trt +
-      0.20 * carry +
+    # low-activity composition:
+    # LPA dominant, MPA smaller, VPA usually minimal
+    df <- df %>%
+      mutate(
+        treat_phase_pa = ifelse(trt == 1 | carry == 1, 1, 0),
 
-      # soziodemografische Effekte
-      (-0.18) * female +
-       0.20 * prior_app +
-       0.12 * income_high +
-       0.05 * income_med +
-       0.08 * age_25_50 +
-       0.03 * scale(age_c)[,1] +
+        vpa_share = ifelse(weeklyMET_minutes < 650, 0, runif(n(), 0.00, 0.03)),
 
-      rnorm(n(), 0, 0.7)
-  )
+        mpa_share = ifelse(
+          treat_phase_pa == 1,
+          runif(n(), 0.22, 0.32),
+          runif(n(), 0.16, 0.24)
+        ),
 
-make_days <- function(x, shift = 0) {
-  p <- plogis(x + shift)
-  rbinom(length(x), 7, pmin(pmax(p, 0.02), 0.98))
+        lpa_share = pmax(1 - vpa_share - mpa_share, 0.68),
+
+        share_sum = lpa_share + mpa_share + vpa_share,
+        lpa_share = lpa_share / share_sum,
+        mpa_share = mpa_share / share_sum,
+        vpa_share = vpa_share / share_sum,
+
+        lpa_met_week = weeklyMET_minutes * lpa_share,
+        mpa_met_week = weeklyMET_minutes * mpa_share,
+        vpa_met_week = weeklyMET_minutes * vpa_share,
+
+        lpa_min_week = lpa_met_week / 3,
+        mpa_min_week = mpa_met_week / 5,
+        vpa_min_week = vpa_met_week / 9
+      )
+    )
+
+make_days_from_minutes <- function(min_week, target_min_per_day) {
+  days <- ifelse(min_week <= 0, 0, round(min_week / target_min_per_day))
+  days <- pmin(pmax(days, 0), 7)
+  days
 }
 
-# Mehr moderate Aktivität als vigorous, light am häufigsten
+safe_minutes_per_day <- function(min_week, days) {
+  ifelse(days > 0, pmax(round(min_week / days), 5), NA)
+}
+
 df <- df %>%
   mutate(
-    pa_vig_days   = make_days(pa_prop, -1.10),
-    pa_mod_days   = make_days(pa_prop, -0.15),
-    pa_light_days = make_days(pa_prop,  0.55)
-  )
+    pa_light_days = make_days_from_minutes(lpa_min_week, 35),
+    pa_mod_days   = make_days_from_minutes(mpa_min_week, 25),
+    pa_vig_days   = make_days_from_minutes(vpa_min_week, 20),
 
-# Minuten ebenfalls interventionssensitiv machen
-df <- df %>%
-  mutate(
-    # Frauen: laut Paper eher längere Aktivitätsdauern
-    # Männer: eher höhere guideline-Erreichung insgesamt
-    vig_mu = log(pmax(5,
-      28 + 10 * trt + 4 * carry +
-      4 * scale(habit_latent)[,1] +
-      3 * male + 2 * prior_app + 2 * income_high
-    )),
+    pa_light_minutes = safe_minutes_per_day(lpa_min_week, pa_light_days),
+    pa_mod_minutes   = safe_minutes_per_day(mpa_min_week, pa_mod_days),
+    pa_vig_minutes   = safe_minutes_per_day(vpa_min_week, pa_vig_days),
 
-    mod_mu = log(pmax(5,
-      38 + 12 * trt + 5 * carry +
-      5 * scale(intention_latent)[,1] +
-      3 * female + 3 * prior_app + 2 * age_25_50
-    )),
-
-    light_mu = log(pmax(5,
-      50 + 8 * trt + 3 * carry +
-      3 * scale(auto_mot_latent)[,1] +
-      5 * female + 2 * prior_app
-    )),
-
-    pa_vig_minutes = ifelse(
-      pa_vig_days > 0,
-      round(rlnorm(n(), meanlog = vig_mu, sdlog = 0.30)),
-      NA
-    ),
-
-    pa_mod_minutes = ifelse(
-      pa_mod_days > 0,
-      round(rlnorm(n(), meanlog = mod_mu, sdlog = 0.28)),
-      NA
-    ),
-
-    pa_light_minutes = ifelse(
-      pa_light_days > 0,
-      round(rlnorm(n(), meanlog = light_mu, sdlog = 0.25)),
-      NA
-    )
-  )
-
-# Sicherheit: wenn 0 Tage, dann Minuten = NA
-df <- df %>%
-  mutate(
-    pa_vig_minutes   = ifelse(pa_vig_days == 0, NA, pa_vig_minutes),
+    pa_light_minutes = ifelse(pa_light_days == 0, NA, pa_light_minutes),
     pa_mod_minutes   = ifelse(pa_mod_days == 0, NA, pa_mod_minutes),
-    pa_light_minutes = ifelse(pa_light_days == 0, NA, pa_light_minutes)
+    pa_vig_minutes   = ifelse(pa_vig_days == 0, NA, pa_vig_minutes),
+
+    weeklyMET_minutes_check =
+      ifelse(is.na(pa_vig_days), 0, pa_vig_days) * ifelse(is.na(pa_vig_minutes), 0, pa_vig_minutes) * 9 +
+      ifelse(is.na(pa_mod_days), 0, pa_mod_days) * ifelse(is.na(pa_mod_minutes), 0, pa_mod_minutes) * 5 +
+      ifelse(is.na(pa_light_days), 0, pa_light_days) * ifelse(is.na(pa_light_minutes), 0, pa_light_minutes) * 3
   )
 
-# Aggregierter PA-Outcome aus Surveydaten
+# =========================================================
+# 8) Steps/day only for AI-app phases (kept in CSV, not mapped to survey export)
+# =========================================================
+
+base_steps_day_pa <- 3500
+sesoi_steps_day_pa <- 500
+
+age_steps_year_pa <- -15
+gender_steps_male_pa <- 400
+prior_app_steps_pa <- 800
+high_ses_steps_pa <- 500
+
+bp_sd_steps_pa <- 2500
+wp_sd_steps_1day_pa <- 1800
+n_days_agg_pa <- 7
+
+valid_steps_phase <- (df$studyGroup == "IG" & df$timePoint == "T2") |
+                     (df$studyGroup == "CG" & df$timePoint == "T3")
+
+steps_random_intercept <- tibble(
+  id = 1:N,
+  rand_steps = rnorm(N, 0, bp_sd_steps_pa)
+)
+
 df <- df %>%
+  left_join(steps_random_intercept, by = "id") %>%
   mutate(
-    weeklyMET_minutes =
-      ifelse(is.na(pa_vig_days), 0, pa_vig_days) * ifelse(is.na(pa_vig_minutes), 0, pa_vig_minutes) * 8 +
-      ifelse(is.na(pa_mod_days), 0, pa_mod_days) * ifelse(is.na(pa_mod_minutes), 0, pa_mod_minutes) * 4 +
-      ifelse(is.na(pa_light_days), 0, pa_light_days) * ifelse(is.na(pa_light_minutes), 0, pa_light_minutes) * 2
+    steps_day = ifelse(
+      valid_steps_phase,
+      base_steps_day_pa +
+        rand_steps +
+        trt * sesoi_steps_day_pa +
+        carry * (0.25 * sesoi_steps_day_pa) +
+        age_c * age_steps_year_pa +
+        male * gender_steps_male_pa +
+        prior_app * prior_app_steps_pa +
+        income_high * high_ses_steps_pa +
+        rnorm(n(), 0, wp_sd_steps_1day_pa / sqrt(n_days_agg_pa)),
+      NA
+    ),
+
+    steps_day = ifelse(!is.na(steps_day), pmax(round(steps_day), 0), NA)
   )
   
 # =========================================================
-# 8) Itemgeneratoren
+# 9) Itemgeneratoren
 # =========================================================
 likert_1_5 <- function(x) pmin(pmax(round(x), 1), 5)
 likert_1_7 <- function(x) pmin(pmax(round(x), 1), 7)
@@ -451,15 +514,21 @@ likert_0_4 <- function(x) pmin(pmax(round(x), 0), 4)
 
 df <- df %>%
   mutate(
-    autonomous_mot_1 = likert_0_4(auto_mot_latent + rnorm(n(), 0, 0.5)),
-    autonomous_mot_2 = likert_0_4(auto_mot_latent + rnorm(n(), 0, 0.5)),
-    autonomous_mot_3 = likert_0_4(auto_mot_latent + rnorm(n(), 0, 0.5)),
-    autonomous_mot_4 = likert_0_4(auto_mot_latent + rnorm(n(), 0, 0.5)),
+    intrinsic_mot_1 = likert_0_4(intrinsic_mot_latent + rnorm(n(), 0, 0.5)),
+    intrinsic_mot_2 = likert_0_4(intrinsic_mot_latent + rnorm(n(), 0, 0.5)),
+    intrinsic_mot_3 = likert_0_4(intrinsic_mot_latent + rnorm(n(), 0, 0.5)),
 
-    controlled_mot_1 = likert_0_4(1.8 + rnorm(n(), 0, 0.7)),
-    controlled_mot_2 = likert_0_4(1.8 + rnorm(n(), 0, 0.7)),
-    controlled_mot_3 = likert_0_4(1.8 + rnorm(n(), 0, 0.7)),
-    controlled_mot_4 = likert_0_4(1.8 + rnorm(n(), 0, 0.7))
+    perceived_comp_1 = likert_0_4(perceived_comp_latent + rnorm(n(), 0, 0.5)),
+    perceived_comp_2 = likert_0_4(perceived_comp_latent + rnorm(n(), 0, 0.5)),
+    perceived_comp_3 = likert_0_4(perceived_comp_latent + rnorm(n(), 0, 0.5)),
+
+    perceived_choice_1 = likert_0_4(perceived_choice_latent + rnorm(n(), 0, 0.5)),
+    perceived_choice_2 = likert_0_4(perceived_choice_latent + rnorm(n(), 0, 0.5)),
+    perceived_choice_3 = likert_0_4(perceived_choice_latent + rnorm(n(), 0, 0.5)),
+
+    extrinsic_mot_1 = likert_0_4(extrinsic_mot_latent + rnorm(n(), 0, 0.6)),
+    extrinsic_mot_2 = likert_0_4(extrinsic_mot_latent + rnorm(n(), 0, 0.6)),
+    extrinsic_mot_3 = likert_0_4(extrinsic_mot_latent + rnorm(n(), 0, 0.6))
   )
 
 # Planning 1-4
@@ -482,10 +551,10 @@ df <- df %>%
 # Motivationale Kompetenz 1-5
 df <- df %>%
   mutate(
-    motivational_comp_1 = likert_1_5(3.2 + 0.3 * scale(auto_mot_latent)[,1] + rnorm(n(), 0, 0.5)),
-    motivational_comp_2 = likert_1_5(3.2 + 0.3 * scale(auto_mot_latent)[,1] + rnorm(n(), 0, 0.5)),
-    motivational_comp_3 = likert_1_5(3.2 + 0.3 * scale(auto_mot_latent)[,1] + rnorm(n(), 0, 0.5)),
-    motivational_comp_4 = likert_1_5(3.2 + 0.3 * scale(auto_mot_latent)[,1] + rnorm(n(), 0, 0.5))
+    motivational_comp_1 = likert_1_5(3.2 + 0.3 * scale(intrinsic_mot_latent)[,1] + rnorm(n(), 0, 0.5)),
+    motivational_comp_2 = likert_1_5(3.2 + 0.3 * scale(intrinsic_mot_latent)[,1] + rnorm(n(), 0, 0.5)),
+    motivational_comp_3 = likert_1_5(3.2 + 0.3 * scale(intrinsic_mot_latent)[,1] + rnorm(n(), 0, 0.5)),
+    motivational_comp_4 = likert_1_5(3.2 + 0.3 * scale(intrinsic_mot_latent)[,1] + rnorm(n(), 0, 0.5))
   )
 
 # BMZI 1-5
@@ -508,7 +577,7 @@ df <- df %>%
   )
 
 # =========================================================
-# 9) TAM nur in Interventionsphasen
+# 10) TAM nur in Interventionsphasen
 # =========================================================
 valid_tam <- (df$studyGroup == "IG" & df$timePoint == "T2") |
              (df$studyGroup == "CG" & df$timePoint == "T3")
@@ -572,13 +641,13 @@ df <- df %>%
 
 
 # =========================================================
-# 10) Missingness / Dropout
+# 11) Missingness / Dropout
 # =========================================================
 drop_ids_t2 <- sample(1:N, size = round(0.10 * N))
 drop_ids_t3_extra <- sample(setdiff(1:N, drop_ids_t2), size = round(0.10 * N))
 
 item_cols <- grep(
-  "^(habit_|intention_|attitude_|norm_|pbc_|autonomous_mot_|controlled_mot_|action_planning_|self_control_|motivational_comp_|tam_|bmzi_|zimo_)",
+  "^(habit_|intention_|attitude_|norm_|pbc_|intrinsic_mot_|perceived_comp_|perceived_choice_|extrinsic_mot_|action_planning_|self_control_|motivational_comp_|tam_|bmzi_)",
   names(df), value = TRUE
 )
 
@@ -602,8 +671,8 @@ for (cl in item_cols) {
 # =========================================================
 write.csv(
   df,
-  "C:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/AIcoPA_simulation_v2_5_itemdata.csv",
+  "C:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/AIcoPA_simulation_v3_itemdata.csv",
   row.names = FALSE
 )
 
-cat("Simulation V2.5 erstellt: AIcoPA_simulation_v2_5_itemdata.csv\n")
+cat("Simulation V3 erstellt: AIcoPA_simulation_v3_itemdata.csv\n")

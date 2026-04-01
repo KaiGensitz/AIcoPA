@@ -2,7 +2,7 @@
 DATEI GELADEN
 =====================================
 Zeilen: 600 
-Spalten: 186 
+Spalten: 193 
 
 
 =====================================
@@ -35,12 +35,12 @@ Anzahl Zeilen pro ID (sollte meist 3 sein):
 # A tibble: 6 × 4
   studyGroup timePoint   MET    sd
        <dbl> <chr>     <dbl> <dbl>
-1          1 T1        1356.  789.
-2          1 T2        2301. 1401.
-3          1 T3        1393. 1183.
-4          2 T1        1451.  869.
-5          2 T2        1239.  910.
-6          2 T3        2043. 1339.
+1          1 T1        1981  1349.
+2          1 T2        2826. 1716.
+3          1 T3        1898. 1453.
+4          2 T1        1996. 1189.
+5          2 T2        2033. 1344.
+6          2 T3        3110  2259.
 
 Erwartung:
 - Gruppe 1: Anstieg T1 -> T2
@@ -52,12 +52,12 @@ Erwartung:
 # A tibble: 6 × 5
   studyGroup timePoint     n habit_mean habit_sd
        <dbl> <chr>     <int>      <dbl>    <dbl>
-1          1 T1           90       2.28     1.12
-2          1 T2           90       2.87     1.23
-3          1 T3           90       2.44     1.02
-4          2 T1          110       2.36     1.17
-5          2 T2          110       2.35     1.14
-6          2 T3          110       2.95     1.22
+1          1 T1           90       2.26     1.13
+2          1 T2           90       2.88     1.16
+3          1 T3           90       2.42     1.03
+4          2 T1          110       2.41     1.23
+5          2 T2          110       2.34     1.14
+6          2 T3          110       2.89     1.13
 
 Erwartung:
 - Gruppe 1: Habit steigt von T1 auf T2
@@ -93,40 +93,40 @@ Erwartung:
  Bew1 vs Bew2 
         
          FALSE TRUE
-  0 Tage     0   98
+  0 Tage     0   86
   1 Tag    111    0
-  2 Tage   102    0
-  3 Tage    86    0
-  4 Tage    63    0
-  5 Tage    53    0
-  6 Tage    19    0
-  7 Tage     8    0
+  2 Tage   118    0
+  3 Tage    87    0
+  4 Tage    60    0
+  5 Tage    35    0
+  6 Tage    31    0
+  7 Tage    12    0
   <NA>       0   60
 
  Bew3 vs Bew4 
         
          FALSE TRUE
-  0 Tage     0   22
-  1 Tag     62    0
-  2 Tage    74    0
-  3 Tage    93    0
+  0 Tage     0   28
+  1 Tag     63    0
+  2 Tage    61    0
+  3 Tage    78    0
   4 Tage    96    0
-  5 Tage    86    0
-  6 Tage    74    0
+  5 Tage   106    0
+  6 Tage    75    0
   7 Tage    33    0
   <NA>       0   60
 
  Bew5 vs Bew6 
         
          FALSE TRUE
-  0 Tage     0   11
-  1 Tag     27    0
-  2 Tage    52    0
+  0 Tage     0   14
+  1 Tag     21    0
+  2 Tage    40    0
   3 Tage    72    0
-  4 Tage    70    0
-  5 Tage   114    0
-  6 Tage   115    0
-  7 Tage    79    0
+  4 Tage    91    0
+  5 Tage    96    0
+  6 Tage   123    0
+  7 Tage    83    0
   <NA>       0   60
 
 Erwartung:
@@ -136,16 +136,12 @@ Erwartung:
 =====================================
 6. KORRELATIONEN DER KERNKONSTRUKTE 
 =====================================
-                        Intention1.Int1. Control1.Con1. ActionPlan.ActionPlan1.
-Intention1.Int1.                    1.00           0.30                    0.22
-Control1.Con1.                      0.30           1.00                    0.14
-ActionPlan.ActionPlan1.             0.22           0.14                    1.00
-Habit.Habit1.                       0.13           0.24                    0.12
-                        Habit.Habit1.
-Intention1.Int1.                 0.13
-Control1.Con1.                   0.24
-ActionPlan.ActionPlan1.          0.12
-Habit.Habit1.                    1.00
+            Intention1 Control1 ActionPlan1 Habit1 PA_MET
+Intention1        1.00     0.29        0.28   0.23   0.45
+Control1          0.29     1.00        0.15   0.26   0.33
+ActionPlan1       0.28     0.15        1.00   0.17   0.24
+Habit1            0.23     0.26        0.17   1.00   0.49
+PA_MET            0.45     0.33        0.24   0.49   1.00
 
 Grobe Erwartungen:
 - Intention mit PA positiv
@@ -156,18 +152,16 @@ Grobe Erwartungen:
 =====================================
 7. MISSINGNESS 
 =====================================
-Gesamter Missing-Anteil: 0.408 
+Gesamter Missing-Anteil: 0.411 
 # A tibble: 3 × 2
   timePoint missing_share
   <chr>             <dbl>
-1 T1                0.413
-2 T2                0.393
-3 T3                0.425
+1 T1                0.409
+2 T2                0.400
+3 T3                0.430
 
 Missingness in zentralen Variablen:
-Habit[Habit1] : 0.145 
-Intention1[Int1] : 0.148 
-TAM[WA1] : 0.723 
+PA_MET (rekonstruiert): 0 
 
 =====================================
 8. CEILING / FLOOR 
@@ -176,31 +170,27 @@ TAM[WA1] : 0.723
 Verteilung: Habit[Habit1] 
 
    1    2    3    4    5 <NA> 
- 137  114  126  101   35   87 
+ 137  130  123   78   43   89 
 
 Verteilung: Intention1[Int1] 
 
    1    2    3    4    5    6    7 <NA> 
-   6   24   64  107  127  116   67   89 
+   7   28   59   99  135  115   69   88 
 
 Verteilung: Control1[Con1] 
 
-   1    2    3    4    5    6    7 <NA> 
-   1   12   66  122  149  107   59   84 
+   2    3    4    5    6    7 <NA> 
+  20   61  104  165  105   58   87 
 
 Verteilung: ActionPlan[ActionPlan1] 
 
    1    2    3    4 <NA> 
-  98  201  180   35   86 
+ 100  206  169   39   86 
 
 Verteilung: TAM[WA1] 
 
    2    3    4    5    6    7 <NA> 
-   2    9   29   51   41   34  434 
-
-Interpretation:
-- Nicht fast alles auf Minimum oder Maximum
-- Leichte Ceiling-Effekte bei TAM koennen plausibel sein
+   1   10   29   47   47   32  434 
 
 =====================================
 9. EINFACHE LMMs 
@@ -211,31 +201,136 @@ Linear mixed model fit by REML ['lmerMod']
 Formula: habit_score_check ~ studyGroup * timePoint + (1 | id)
    Data: out
 
-REML criterion at convergence: 1579.7
+REML criterion at convergence: 1583.9
 
 Scaled residuals: 
-     Min       1Q   Median       3Q      Max 
--2.56623 -0.65855 -0.09987  0.59062  2.59352 
+    Min      1Q  Median      3Q     Max 
+-1.8289 -0.6648 -0.1039  0.6072  2.3974 
 
 Random effects:
  Groups   Name        Variance Std.Dev.
- id       (Intercept) 0.6672   0.8168  
- Residual             0.6647   0.8153  
+ id       (Intercept) 0.6128   0.7828  
+ Residual             0.6924   0.8321  
 Number of obs: 540, groups:  id, 200
 
 Fixed effects:
                         Estimate Std. Error t value
-(Intercept)              2.27685    0.12165  18.716
-studyGroup2              0.08754    0.16403   0.534
-timePointT2              0.58894    0.12650   4.655
-timePointT3              0.14727    0.13313   1.106
-studyGroup2:timePointT2 -0.62260    0.17058  -3.650
-studyGroup2:timePointT3  0.42590    0.17808   2.392
+(Intercept)               2.2593     0.1204  18.761
+studyGroup2               0.1529     0.1624   0.941
+timePointT2               0.5955     0.1296   4.595
+timePointT3               0.1617     0.1358   1.191
+studyGroup2:timePointT2  -0.6919     0.1741  -3.974
+studyGroup2:timePointT3   0.2496     0.1816   1.375
 
 Correlation of Fixed Effects:
             (Intr) stdyG2 tmPnT2 tmPnT3 sG2:PT2
 studyGroup2 -0.742                             
-timePointT2 -0.480  0.356                      
-timePointT3 -0.456  0.338  0.463               
-stdyGr2:PT2  0.356 -0.480 -0.742 -0.343        
-stdyGr2:PT3  0.341 -0.460 -0.346 -0.748  0.467 
+timePointT2 -0.493  0.366                      
+timePointT3 -0.471  0.349  0.463               
+stdyGr2:PT2  0.367 -0.495 -0.744 -0.345        
+stdyGr2:PT3  0.352 -0.474 -0.346 -0.748  0.466 
+
+LMM PA_MET:
+Linear mixed model fit by REML ['lmerMod']
+Formula: PA_MET ~ studyGroup * timePoint + (1 | id)
+   Data: out
+
+REML criterion at convergence: 10394.4
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-2.6941 -0.5618 -0.0654  0.5339  3.7857 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ id       (Intercept) 1005346  1003    
+ Residual             1551478  1246    
+Number of obs: 600, groups:  id, 200
+
+Fixed effects:
+                        Estimate Std. Error t value
+(Intercept)              1981.00     168.55  11.753
+studyGroup2                14.89     227.27   0.066
+timePointT2               845.24     185.68   4.552
+timePointT3               -82.92     185.68  -0.447
+studyGroup2:timePointT2  -808.25     250.37  -3.228
+studyGroup2:timePointT3  1197.03     250.37   4.781
+
+Correlation of Fixed Effects:
+            (Intr) stdyG2 tmPnT2 tmPnT3 sG2:PT2
+studyGroup2 -0.742                             
+timePointT2 -0.551  0.408                      
+timePointT3 -0.551  0.408  0.500               
+stdyGr2:PT2  0.408 -0.551 -0.742 -0.371        
+stdyGr2:PT3  0.408 -0.551 -0.371 -0.742  0.500 
+
+=====================================
+9b. ERWEITERTE LMMs MIT DEMOGRAFIE 
+=====================================
+
+Erweitertes LMM PA_MET:
+Linear mixed model fit by REML ['lmerMod']
+Formula: PA_MET ~ studyGroup * timePoint + age_check + female_check +  
+    prior_app_check + income_check + (1 | id)
+   Data: out
+
+REML criterion at convergence: 10335.7
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-2.7902 -0.5825 -0.0611  0.5394  3.7465 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ id       (Intercept)  908447   953.1  
+ Residual             1551478  1245.6  
+Number of obs: 600, groups:  id, 200
+
+Fixed effects:
+                        Estimate Std. Error t value
+(Intercept)             1235.934    442.925   2.790
+studyGroup2               39.709    223.792   0.177
+timePointT2              845.244    185.681   4.552
+timePointT3              -82.922    185.681  -0.447
+age_check                  5.559      7.906   0.703
+female_check            -238.588    179.538  -1.329
+prior_app_check          568.121    178.790   3.178
+income_check             252.760    112.819   2.240
+studyGroup2:timePointT2 -808.254    250.372  -3.228
+studyGroup2:timePointT3 1197.031    250.372   4.781
+
+Correlation of Fixed Effects:
+            (Intr) stdyG2 tmPnT2 tmPnT3 ag_chc fml_ch prr_p_ incm_c sG2:PT2
+studyGroup2 -0.333                                                         
+timePointT2 -0.210  0.415                                                  
+timePointT3 -0.210  0.415  0.500                                           
+age_check   -0.737  0.064  0.000  0.000                                    
+female_chck -0.307 -0.027  0.000  0.000  0.069                             
+prr_pp_chck -0.193 -0.022  0.000  0.000  0.062  0.032                      
+income_chck -0.409  0.039  0.000  0.000 -0.094 -0.022  0.017               
+stdyGr2:PT2  0.155 -0.559 -0.742 -0.371  0.000  0.000  0.000  0.000        
+stdyGr2:PT3  0.155 -0.559 -0.371 -0.742  0.000  0.000  0.000  0.000  0.500 
+
+Lineares Modell AppUseDays:
+
+Call:
+lm(formula = AppUseDays_num ~ age_check + female_check + prior_app_check + 
+    income_check, data = app_dat)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-5.0858 -0.4378  0.3347  0.8158  2.1321 
+
+Coefficients:
+                Estimate Std. Error t value Pr(>|t|)    
+(Intercept)      6.41038    0.51852  12.363   <2e-16 ***
+age_check       -0.01580    0.01087  -1.454   0.1485    
+female_check     0.94828    0.26493   3.579   0.0005 ***
+prior_app_check  0.41186    0.23634   1.743   0.0840 .  
+income_check    -0.29297    0.15001  -1.953   0.0532 .  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 1.244 on 119 degrees of freedom
+Multiple R-squared:  0.1476,	Adjusted R-squared:  0.1189 
+F-statistic: 5.151 on 4 and 119 DF,  p-value: 0.0007308

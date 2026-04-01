@@ -15,8 +15,8 @@ library(stringr)
 # 1) Pfade
 # =========================================================
 template_path <- "c:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/results-survey581821.xlsx"
-sim_path      <- "c:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/AIcoPA_simulation_v2_5_itemdata.csv"
-output_path   <- "c:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/AIcoPA_simulation_v2_5_export_like_template.xlsx"
+sim_path      <- "c:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/AIcoPA_simulation_v3_itemdata.csv"
+output_path   <- "c:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/AIcoPA_simulation_v3_export_like_template.xlsx"
 
 # =========================================================
 # 2) Daten einlesen
@@ -240,25 +240,38 @@ for (sim_name in names(rename_map)) {
 # =========================================================
 # 10) KIM Block
 # =========================================================
-# Rohskala im Export als Textlabels 0-4
+
+get_sim_col <- function(df, col) {
+  if (col %in% names(df)) return(df[[col]])
+  rep(NA_real_, nrow(df))
+}
+
 kim_numeric <- list(
-  "KIM[IntVer1]" = sim$autonomous_mot_1,
-  "KIM[IntVer2]" = sim$autonomous_mot_2,
-  "KIM[IntVer3]" = sim$autonomous_mot_3,
-  "KIM[wKomp1]"  = sim$autonomous_mot_4,
-  "KIM[wKomp2]"  = sim$controlled_mot_1,
-  "KIM[wKomp3]"  = sim$controlled_mot_2,
-  "KIM[wWahl1]"  = sim$controlled_mot_3,
-  "KIM[wWahl2]"  = sim$controlled_mot_4,
-  "KIM[wWahl3]"  = safe_jitter_int(sim$controlled_mot_4, 0, 4, 1),
-  "KIM[DrAn1]"   = safe_jitter_int(sim$controlled_mot_2, 0, 4, 1),
-  "KIM[DrAn2]"   = safe_jitter_int(sim$controlled_mot_3, 0, 4, 1),
-  "KIM[DrAn3]"   = safe_jitter_int(sim$controlled_mot_1, 0, 4, 1),
-  "KIM[ACheck1]" = safe_jitter_int(sim$autonomous_mot_2, 0, 4, 1)
+  "KIM[IntVer1]" = get_sim_col(sim, "intrinsic_mot_1"),
+  "KIM[IntVer2]" = get_sim_col(sim, "intrinsic_mot_2"),
+  "KIM[IntVer3]" = get_sim_col(sim, "intrinsic_mot_3"),
+
+  "KIM[wKomp1]"  = get_sim_col(sim, "perceived_comp_1"),
+  "KIM[wKomp2]"  = get_sim_col(sim, "perceived_comp_2"),
+  "KIM[wKomp3]"  = get_sim_col(sim, "perceived_comp_3"),
+
+  "KIM[wWahl1]"  = get_sim_col(sim, "perceived_choice_1"),
+  "KIM[wWahl2]"  = get_sim_col(sim, "perceived_choice_2"),
+  "KIM[wWahl3]"  = get_sim_col(sim, "perceived_choice_3"),
+
+  "KIM[DrAn1]"   = get_sim_col(sim, "extrinsic_mot_1"),
+  "KIM[DrAn2]"   = get_sim_col(sim, "extrinsic_mot_2"),
+  "KIM[DrAn3]"   = get_sim_col(sim, "extrinsic_mot_3")
 )
 
 for (nm in names(kim_numeric)) {
   if (nm %in% names(out)) out[[nm]] <- to_likert_label_0_4(kim_numeric[[nm]])
+}
+
+if ("KIM[ACheck1]" %in% names(out)) {
+  out[["KIM[ACheck1]"]] <- to_likert_label_0_4(
+    safe_jitter_int(get_sim_col(sim, "intrinsic_mot_2"), 0, 4, 1)
+  )
 }
 
 # =========================================================
@@ -266,12 +279,12 @@ for (nm in names(kim_numeric)) {
 # =========================================================
 # Da im Simulationsdatensatz keine expliziten ZiMo-Items vorliegen,
 # werden plausible Items aus motivational_comp, attitude und self_control abgeleitet.
-zimo_base_fit  <- pmin(pmax(round((sim$motivational_comp_1 + sim$motivational_comp_2) / 2), 1), 5)
-zimo_base_heal <- pmin(pmax(round((sim$motivational_comp_3 + sim$motivational_comp_4) / 2), 1), 5)
-zimo_base_body <- pmin(pmax(round((sim$attitude_1 + sim$attitude_2) / 2), 1), 5)
-zimo_base_soc  <- pmin(pmax(round((sim$attitude_3 + sim$norm_inj_1) / 2), 1), 5)
-zimo_base_comp <- pmin(pmax(round((sim$self_control_1 + sim$self_control_2) / 2), 1), 5)
-zimo_base_dis  <- pmin(pmax(round((sim$attitude_4 + sim$attitude_5) / 2), 1), 5)
+zimo_base_fit  <- pmin(pmax(round((get_sim_col(sim, "motivational_comp_1") + get_sim_col(sim, "motivational_comp_2")) / 2), 1), 5)
+zimo_base_heal <- pmin(pmax(round((get_sim_col(sim, "motivational_comp_3") + get_sim_col(sim, "motivational_comp_4")) / 2), 1), 5)
+zimo_base_body <- pmin(pmax(round((get_sim_col(sim, "attitude_1") + get_sim_col(sim, "attitude_2")) / 2), 1), 5)
+zimo_base_soc  <- pmin(pmax(round((get_sim_col(sim, "attitude_3") + get_sim_col(sim, "norm_inj_1")) / 2), 1), 5)
+zimo_base_comp <- pmin(pmax(round((get_sim_col(sim, "self_control_1") + get_sim_col(sim, "self_control_2")) / 2), 1), 5)
+zimo_base_dis  <- pmin(pmax(round((get_sim_col(sim, "attitude_4") + get_sim_col(sim, "attitude_5")) / 2), 1), 5)
 
 zimo_map <- list(
   "ZiMo[discat1]" = safe_jitter_int(zimo_base_dis, 1, 5),
@@ -426,17 +439,17 @@ for (sim_name in names(tam_map)) {
 }
 
 # Zusatzitems aus vorhandenen TAM-Items ableiten
-if ("TAM[WN4]" %in% names(out)) out[["TAM[WN4]"]] <- safe_jitter_int(sim$tam_ease_3, 1, 7)
-if ("TAM[WB4]" %in% names(out)) out[["TAM[WB4]"]] <- safe_jitter_int(sim$tam_enjoyment_3, 1, 7)
-if ("TAM[WF4]" %in% names(out)) out[["TAM[WF4]"]] <- safe_jitter_int(sim$tam_trust_3, 1, 7)
+if ("TAM[WN4]" %in% names(out)) out[["TAM[WN4]"]] <- safe_jitter_int(get_sim_col(sim, "tam_ease_3"), 1, 7)
+if ("TAM[WB4]" %in% names(out)) out[["TAM[WB4]"]] <- safe_jitter_int(get_sim_col(sim, "tam_enjoyment_3"), 1, 7)
+if ("TAM[WF4]" %in% names(out)) out[["TAM[WF4]"]] <- safe_jitter_int(get_sim_col(sim, "tam_trust_3"), 1, 7)
 
-if ("TAM[WV1]" %in% names(out)) out[["TAM[WV1]"]] <- safe_jitter_int(sim$tam_usefulness_1, 1, 7)
-if ("TAM[WV2]" %in% names(out)) out[["TAM[WV2]"]] <- safe_jitter_int(sim$tam_usefulness_2, 1, 7)
-if ("TAM[WV3]" %in% names(out)) out[["TAM[WV3]"]] <- safe_jitter_int(sim$tam_usefulness_3, 1, 7)
-if ("TAM[WV4]" %in% names(out)) out[["TAM[WV4]"]] <- safe_jitter_int(sim$tam_usefulness_2, 1, 7)
+if ("TAM[WV1]" %in% names(out)) out[["TAM[WV1]"]] <- safe_jitter_int(get_sim_col(sim, "tam_usefulness_1"), 1, 7)
+if ("TAM[WV2]" %in% names(out)) out[["TAM[WV2]"]] <- safe_jitter_int(get_sim_col(sim, "tam_usefulness_2"), 1, 7)
+if ("TAM[WV3]" %in% names(out)) out[["TAM[WV3]"]] <- safe_jitter_int(get_sim_col(sim, "tam_usefulness_3"), 1, 7)
+if ("TAM[WV4]" %in% names(out)) out[["TAM[WV4]"]] <- safe_jitter_int(get_sim_col(sim, "tam_usefulness_2"), 1, 7)
 
-if ("TAM[NI4]" %in% names(out)) out[["TAM[NI4]"]] <- safe_jitter_int(sim$tam_future_use_3, 1, 7)
-if ("TAM[ACheck3]" %in% names(out)) out[["TAM[ACheck3]"]] <- safe_jitter_int(sim$tam_future_use_2, 1, 7)
+if ("TAM[NI4]" %in% names(out)) out[["TAM[NI4]"]] <- safe_jitter_int(get_sim_col(sim, "tam_future_use_3"), 1, 7)
+if ("TAM[ACheck3]" %in% names(out)) out[["TAM[ACheck3]"]] <- safe_jitter_int(get_sim_col(sim, "tam_future_use_2"), 1, 7)
 
 # =========================================================
 # TAM nur bei korrekten Zeitpunkten
