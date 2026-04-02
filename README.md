@@ -10,7 +10,6 @@ Synthetic data generation pipeline for a longitudinal cross-over physical activi
 Simulation execution and setup: simulation_run_procedure.md  
 Mapping to survey format (LimeSurvey): mapping_procedure.md  
 Validation checks and expected outputs: simulation_validation_checks.md  
-Technical implementation details: simulation_architecture_reference.md  
 Study design and assumptions: simulation_study_protocol.md  
 Function-level explanations (UID format): function_explanations_uid.md  
 
@@ -33,19 +32,19 @@ Run full pipeline in order:
 
 1. Simulation  
 
-    source("simulation_script.R")
+    source("SurveySimulation.R")
 
-    Output file: AIcoPA_simulation_v2_5_itemdata.csv
+    Output file: AIcoPA_simulation_v3_itemdata.csv
 
 2. Mapping (LimeSurvey format)  
 
-    source("mapping_script.R")
+    source("MappingSimToSurvey.R")
 
-    Output file: AIcoPA_simulation_v2_5_export_like_template.xlsx
+    Output file: AIcoPA_simulation_v3_export_like_template.xlsx
 
 3. Validation  
 
-    source("simulation_check.R")
+    source("SimulationCheck.R")
 
 ---
 
@@ -69,14 +68,23 @@ This allows modeling of time-dependent treatment effects and group-by-time inter
 
 ### Latent constructs
 
+The simulation includes the following latent psychological constructs:
+
+**Behavioral regulation and intention**
 - habit  
 - intention  
-- attitude  
-- social norms (injunctive & descriptive)  
-- perceived behavioral control  
-- autonomous motivation  
 - planning  
 - self-control  
+
+**Cognitive determinants**
+- attitude  
+- perceived behavioral control  
+
+**Motivational processes (SDT-based)**
+- intrinsic motivation  
+- extrinsic motivation  
+- perceived competence  
+- perceived choice  
 
 ### Outcomes
 
@@ -90,8 +98,7 @@ This allows modeling of time-dependent treatment effects and group-by-time inter
 
 - sociodemographic effects (age, gender, income, prior app use)  
 - TAM variables (only during intervention phases)  
-- missingness:  
-  - ~10% dropout across time points  
+- missingness: ~ 20% (~10% dropout across time points T2 and T3)
 
 ---
 
@@ -117,7 +124,7 @@ The mapping step transforms simulated data into a LimeSurvey-compatible format:
   - item-level responses  
   - metadata fields  
 
-Output file: AIcoPA_simulation_v2_5_export_like_template.xlsx
+Output file: AIcoPA_simulation_v3_export_like_template.xlsx
 
 ---
 
@@ -127,9 +134,13 @@ Validation script checks:
 
 - Data completeness  
 - Distribution plausibility  
-- Missingness patterns (~10%)  
+- Missingness patterns (~20%)  
 - Correct group × time structure  
 - Consistency of carryover effects  
+- Consistency between simulated MET values and survey-derived PA_MET  
+- Plausibility of intervention effects (SESOI: ~+105 MET-min/week)  
+- Expected direction of group × time interaction effects (cross-over pattern)  
+- Consistency between item-level responses and aggregated scale scores  
 
 ---
 
@@ -137,11 +148,11 @@ Validation script checks:
 
 Simulation:
 
-- AIcoPA_simulation_v2_5_itemdata.csv  
+- AIcoPA_simulation_3_itemdata.csv  
 
 Mapping:
 
-- AIcoPA_simulation_v2_5_export_like_template.xlsx  
+- AIcoPA_simulation_v3_export_like_template.xlsx  
 
 Validation:
 
@@ -168,8 +179,8 @@ Validation:
 - Always use latest output files for downstream steps  
 
 - Changes to constructs or items require updates in:
-  - simulation_script.R  
-  - mapping_script.R  
+  - SurveySimulation.R  
+  - MappingSimToSurvey.R  
 
 - Covariates and latent structures are explicitly modeled and should be kept consistent across time points  
 
