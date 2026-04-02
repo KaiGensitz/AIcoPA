@@ -366,7 +366,8 @@ df <- df %>%
       pa_driver_small +
       rnorm(n(), 0, wp_sd_met_pa),
 
-    weeklyMET_minutes = pmax(round(weeklyMET_minutes), 0)
+    weeklyMET_minutes = pmax(round(weeklyMET_minutes), 0),
+    steps_day = round(weeklyMET_minutes / conv_factor_pa)
   )
 
 # =========================================================
@@ -459,26 +460,6 @@ steps_random_intercept <- tibble(
   id = 1:N,
   rand_steps = rnorm(N, 0, bp_sd_steps_pa)
 )
-
-df <- df %>%
-  left_join(steps_random_intercept, by = "id") %>%
-  mutate(
-    steps_day = ifelse(
-      valid_steps_phase,
-      base_steps_day_pa +
-        rand_steps +
-        trt * sesoi_steps_day_pa +
-        carry * (0.25 * sesoi_steps_day_pa) +
-        age_c * age_steps_year_pa +
-        male * gender_steps_male_pa +
-        prior_app * prior_app_steps_pa +
-        income_high * high_ses_steps_pa +
-        rnorm(n(), 0, wp_sd_steps_1day_pa / sqrt(n_days_agg_pa)),
-      NA
-    ),
-
-    steps_day = ifelse(!is.na(steps_day), pmax(round(steps_day), 0), NA)
-  )
   
 # =========================================================
 # 9) Itemgeneratoren
