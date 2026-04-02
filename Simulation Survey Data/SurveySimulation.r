@@ -124,6 +124,13 @@ selfcontrol_mean <- 3.3
 selfcontrol_sd   <- 0.7
 selfcontrol_eff  <- 0.08
 
+# Motivational competence (PAHCO; Strohacker et al., 2024, Table 1)
+motivational_comp_mean <- 4.38
+motivational_comp_sd   <- 0.64
+# No intervention effect is reported in the source study; therefore,
+# a small positive treatment effect is specified pragmatically.
+motivational_comp_eff  <- 0.10
+
 # BMZI
 bmzi_fit_mean  <- 4.34; bmzi_fit_sd  <- 0.57
 bmzi_body_mean <- 3.15; bmzi_body_sd <- 1.09
@@ -239,6 +246,13 @@ df <- df %>%
       z_selfcontrol * selfcontrol_sd +
       trt * selfcontrol_eff +
       rnorm(n(), 0, 0.25),
+
+    motivational_comp_latent =
+      motivational_comp_mean +
+      0.35 * scale(intrinsic_mot_latent)[,1] +
+      0.20 * scale(perceived_comp_latent)[,1] +
+      trt * motivational_comp_eff +
+      rnorm(n(), 0, 0.35),
 
     zimo_discat_latent =
       zimo_discat_mean +
@@ -546,10 +560,10 @@ df <- df %>%
 # Motivationale Kompetenz 1-5
 df <- df %>%
   mutate(
-    motivational_comp_1 = likert_1_5(3.2 + 0.3 * scale(intrinsic_mot_latent)[,1] + rnorm(n(), 0, 0.5)),
-    motivational_comp_2 = likert_1_5(3.2 + 0.3 * scale(intrinsic_mot_latent)[,1] + rnorm(n(), 0, 0.5)),
-    motivational_comp_3 = likert_1_5(3.2 + 0.3 * scale(intrinsic_mot_latent)[,1] + rnorm(n(), 0, 0.5)),
-    motivational_comp_4 = likert_1_5(3.2 + 0.3 * scale(intrinsic_mot_latent)[,1] + rnorm(n(), 0, 0.5))
+    motivational_comp_1 = likert_1_5(motivational_comp_latent + rnorm(n(), 0, 0.45)),
+    motivational_comp_2 = likert_1_5(motivational_comp_latent + rnorm(n(), 0, 0.45)),
+    motivational_comp_3 = likert_1_5(motivational_comp_latent + rnorm(n(), 0, 0.45)),
+    motivational_comp_4 = likert_1_5(motivational_comp_latent + rnorm(n(), 0, 0.45))
   )
 
 # BMZI 1-5
