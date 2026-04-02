@@ -303,31 +303,45 @@ df <- df %>%
 # 6) Physical Activity (primary outcome = MET-minutes/week)
 # =========================================================
 
-# A. BASELINE INACTIVE PROFILE (Kai / Nigg et al., 2024 logic)
+# A. BASELINE INACTIVE PROFILE (German-PAQ: Nigg et al., 2024)
 base_vpa_mins_pa <- 0
 base_mpa_mins_pa <- 10
 base_lpa_mins_pa <- 120
+intercept_met_pa <- (9 * base_vpa_mins_pa) + (5 * base_mpa_mins_pa) + (3 * base_lpa_mins_pa)
 
-intercept_met_pa <- (9 * base_vpa_mins_pa) + (5 * base_mpa_mins_pa) + (3 * base_lpa_mins_pa)  # 410
+# B. STEP-TO-MET CONVERSION
+cadence_per_3met_pa <- 100
+days_per_week_pa <- 7
+met_multiplier_pa <- 3
+conv_factor_pa <- (1 / cadence_per_3met_pa) * days_per_week_pa * met_multiplier_pa
+# = 0.21 MET-min/week per step/day
 
-# B. INTERVENTION EFFECT
-time_met_pa <- 105
-carry_met_pa <- round(0.25 * time_met_pa, 2)
+# C. INTERVENTION EFFECT AND CARRYOVER EFFECT
+# Based on 3-month step/day effects and available follow-up step/day effects
+mean_steps_intervention_pa <- mean(c(3520, 116, 574, 3159))   # = 1842.25
+mean_steps_followup_pa     <- mean(c(2326, 1639, 440))        # = 1468.33
 
-# C. COVARIATE ESTIMATES (Kai)
+time_met_pa  <- mean_steps_intervention_pa * conv_factor_pa
+carry_met_pa <- mean_steps_followup_pa * conv_factor_pa * 1.3
+
+# D. COVARIATE ESTIMATES
 age_met_pa <- -5
-gender_met_pa <- 150      # increase for being male
+gender_met_pa <- 150
 prior_app_met_pa <- 200
-high_ses_met_pa <- 150    # here: income_high = 1
+high_ses_met_pa <- 150
 
-# D. VARIANCE PARAMETERS
+# E. VARIANCE PARAMETERS
 bp_sd_met_pa <- 310
 wp_sd_met_pa <- 250
 
-# person-level random intercept for PA
+# F. FIXED / RANDOM EFFECTS
+interaction_met_pa <- -time_met_pa
+rand_intercept_var_pa <- bp_sd_met_pa^2
+residual_var_pa <- wp_sd_met_pa^2
+
 pa_random_intercept <- tibble(
   id = 1:N,
-  rand_pa = rnorm(N, 0, bp_sd_met_pa)
+  rand_pa = rnorm(N, mean = 0, sd = bp_sd_met_pa)
 )
 
 df <- df %>%
