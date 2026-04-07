@@ -180,7 +180,9 @@ Validation:
 
 - Changes to constructs or items require updates in:
   - SurveySimulation.R  
-  - MappingSimToSurvey.R  
+  - MappingSimToSurvey.R
+ 
+- For better understanding of AIcoPA_simulation_3_itemdata.csv check codebook_simulation_v3.xlsx
 
 - Covariates and latent structures are explicitly modeled and should be kept consistent across time points  
 
