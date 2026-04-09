@@ -124,9 +124,10 @@ DIRECT_IDENTIFIER_COLUMNS = [
 ## Study Group Blinding
 Original values (e.g., IG, CG) are mapped to random numbers:
 
-For example: 
-**IG → 43  
-CG → 57**
+For example:
+
+**IG → 43**  
+**CG → 57**
 
 This mapping is:
   - stored in the sensitive file
