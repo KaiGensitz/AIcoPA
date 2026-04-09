@@ -28,9 +28,6 @@ ID_COLUMN = "id"
 # Columns to remove from the analysis dataset if present
 DIRECT_IDENTIFIER_COLUMNS = [
     "Name",
-    "Email",
-    "email",
-    "eMail",
     "eMailIG",
     "eMailKG",
     "PhoneSystem",
