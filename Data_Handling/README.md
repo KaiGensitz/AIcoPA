@@ -1,4 +1,4 @@
-# 🔐 LimeSurvey Pseudonymization Script
+# LimeSurvey Pseudonymization Script
 
 ## Overview
 
