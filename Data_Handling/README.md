@@ -112,9 +112,6 @@ The script removes the following columns **if present:**
 ```python
 DIRECT_IDENTIFIER_COLUMNS = [
     "Name",
-    "Email",
-    "email",
-    "eMail",
     "eMailIG",
     "eMailKG",
     "PhoneSystem",
