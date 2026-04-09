@@ -1,4 +1,4 @@
-# 🔐 LimeSurvey Pseudonymization Script
+# LimeSurvey Pseudonymization Script
 
 ## Overview
 
@@ -112,9 +112,6 @@ The script removes the following columns **if present:**
 ```python
 DIRECT_IDENTIFIER_COLUMNS = [
     "Name",
-    "Email",
-    "email",
-    "eMail",
     "eMailIG",
     "eMailKG",
     "PhoneSystem",
@@ -127,9 +124,10 @@ DIRECT_IDENTIFIER_COLUMNS = [
 ## Study Group Blinding
 Original values (e.g., IG, CG) are mapped to random numbers:
 
-For example: 
-**IG → 43  
-CG → 57**
+For example:
+
+**IG → 43**  
+**CG → 57**
 
 This mapping is:
   - stored in the sensitive file
@@ -171,26 +169,6 @@ After running the script, two files are created:
 
 - `survey_pseudonymized.csv` → for analysis  
 - `survey_mapping_sensitive.csv` → sensitive mapping
-
----
-
-## Example Workflow (Longitudinal Study)
-
-### Initial run (T1)
-
-- Run the script on baseline data  
-- A mapping file is created  
-- PseudoIDs and blinded study groups are assigned  
-
----
-
-### Follow-up runs (T2, T3)
-
-- Replace the input file with the new dataset  
-- Run the script again  
-- Existing participants keep the same pseudoID  
-- Study group blinding remains consistent  
-- New participants are automatically added  
 
 ---
 
