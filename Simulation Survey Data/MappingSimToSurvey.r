@@ -14,7 +14,7 @@ library(stringr)
 # =========================================================
 # 1) Pfade
 # =========================================================
-template_path <- "c:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/results-survey581821.xlsx"
+template_path <- "c:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/results-survey581822.xlsx"
 sim_path      <- "c:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/AIcoPA_simulation_v3_itemdata.csv"
 output_path   <- "c:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/AIcoPA_simulation_v3_export_like_template.xlsx"
 
@@ -409,6 +409,20 @@ if ("AlltagAbl[FreiDau]" %in% names(out)) out[["AlltagAbl[FreiDau]"]] <- sample(
 # Smartphone
 if ("PhoneSystem" %in% names(out)) out$PhoneSystem <- to_phone_system(n)
 if ("PhoneSystem[other]" %in% names(out)) out[["PhoneSystem[other]"]] <- NA
+
+# Entfernungen zu POIs
+
+if ("EntfernPOI[BStel]" %in% names(out)) {
+  out[["EntfernPOI[BStel]"]] <- sim$BStel
+}
+
+if ("EntfernPOI[InBew]" %in% names(out)) {
+  out[["EntfernPOI[InBew]"]] <- sim$InBew
+}
+
+if ("EntfernPOI[OutBew]" %in% names(out)) {
+  out[["EntfernPOI[OutBew]"]] <- sim$OutBew
+}
 
 # =========================================================
 # 13) TAM

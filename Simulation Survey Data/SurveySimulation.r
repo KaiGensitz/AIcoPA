@@ -312,6 +312,22 @@ df <- df %>%
     age_25_50 = ifelse(age >= 25 & age <= 50, 1, 0)
   )
 
+env_factors <- tibble(
+  id = 1:N,
+
+  # Beschäftigungsstelle (z.B. Arbeitsplatz)
+  # eher etwas weiter entfernt
+  BStel = round(pmax(rnorm(N, mean = 8, sd = 5), 0.5), 1),
+
+  # Indoor Bewegungsmöglichkeiten (Gym, Halle etc.)
+  InBew = round(pmax(rnorm(N, mean = 5, sd = 3), 0.3), 1),
+
+  # Outdoor Bewegungsmöglichkeiten (Park, Wald etc.)
+  OutBew = round(pmax(rnorm(N, mean = 2, sd = 1.5), 0.1), 1)
+)
+
+df <- df %>% left_join(env_factors, by = "id")
+
 
 # =========================================================
 # 6) Physical Activity (primary outcome = MET-minutes/week)
