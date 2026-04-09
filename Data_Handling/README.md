@@ -171,26 +171,6 @@ After running the script, two files are created:
 
 ---
 
-## Example Workflow (Longitudinal Study)
-
-### Initial run (T1)
-
-- Run the script on baseline data  
-- A mapping file is created  
-- PseudoIDs and blinded study groups are assigned  
-
----
-
-### Follow-up runs (T2, T3)
-
-- Replace the input file with the new dataset  
-- Run the script again  
-- Existing participants keep the same pseudoID  
-- Study group blinding remains consistent  
-- New participants are automatically added  
-
----
-
 ## Updating with New Data
 
 The script is designed to handle updates seamlessly:
