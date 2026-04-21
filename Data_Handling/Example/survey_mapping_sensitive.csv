@@ -1,7 +1,0 @@
-id,pseudoID,Name,eMailIG,eMailKG,PhoneSystem,randomGroup,studyGroup,studyGroup_blind,token,firstname,lastname,email,attribute_1,attribute_2
-22,AJI0Y6DP,FlowTestAndroid1,,tyrakcsgo@gmail.com,Android,2,2,24,AJI0Y6DP,,FlowTestAndroid1,tyrakcsgo@gmail.com,2,Android
-24,BHSAHXTH,FlowTestAndroid2,tyrakcsgo@gmail.com,,Android,1,1,91,BHSAHXTH,,FlowTestAndroid2,tyrakcsgo@gmail.com,1,Android
-25,V3A3ZMF8,iOSFlowTest1,tyrakcsgo@gmail.com,,iOS,1,1,91,V3A3ZMF8,,iOSFlowTest1,tyrakcsgo@gmail.com,1,iOS
-26,MDD4V30T,iOSFlowTest2,,tyrakcsgo@gmail.com,iOS,2,2,24,MDD4V30T,,iOSFlowTest2,tyrakcsgo@gmail.com,2,iOS
-28,9NT3W5UZ,OtherFlowTest1,tyrakcsgo@gmail.com,,Sonstiges,1,1,91,9NT3W5UZ,,OtherFlowTest1,tyrakcsgo@gmail.com,1,Sonstiges
-29,BIKCIDKW,OtherFlowTest2,,tyrakcsgo@gmail.com,,2,2,24,BIKCIDKW,,OtherFlowTest2,tyrakcsgo@gmail.com,2,

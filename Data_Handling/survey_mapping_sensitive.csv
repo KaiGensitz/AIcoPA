@@ -1,0 +1,7 @@
+match_key,name_key,email_key,id,pseudoID,Name,eMailIG,eMailKG,PhoneSystem,randomGroup,studyGroup,studyGroup_blind,token,firstname,lastname,email,attribute_1,attribute_2
+name::flowtestandroid1,flowtestandroid1,tyrakcsgo@gmail.com,22,5BK8XEM5,FlowTestAndroid1,,tyrakcsgo@gmail.com,Android,2,2,84,PB6EXWQ8,,FlowTestAndroid1,tyrakcsgo@gmail.com,2,Android
+name::flowtestandroid2,flowtestandroid2,tyrakcsgo@gmail.com,24,GVE8FS35,FlowTestAndroid2,tyrakcsgo@gmail.com,,Android,1,1,68,D54L1IFF,,FlowTestAndroid2,tyrakcsgo@gmail.com,1,Android
+name::iosflowtest1,iosflowtest1,tyrakcsgo@gmail.com,25,L3Q96HPC,iOSFlowTest1,tyrakcsgo@gmail.com,,iOS,1,1,68,VVVDWE4Q,,iOSFlowTest1,tyrakcsgo@gmail.com,1,iOS
+name::iosflowtest2,iosflowtest2,tyrakcsgo@gmail.com,26,D97L7KTU,iOSFlowTest2,,tyrakcsgo@gmail.com,iOS,2,2,84,2CBFN20D,,iOSFlowTest2,tyrakcsgo@gmail.com,2,iOS
+name::otherflowtest1,otherflowtest1,tyrakcsgo@gmail.com,28,0GAR66P2,OtherFlowTest1,tyrakcsgo@gmail.com,,Sonstiges,1,1,68,GF8YGM1C,,OtherFlowTest1,tyrakcsgo@gmail.com,1,Sonstiges
+name::otherflowtest2,otherflowtest2,tyrakcsgo@gmail.com,29,G2IPPRLI,OtherFlowTest2,,tyrakcsgo@gmail.com,,2,2,84,218BF4L2,,OtherFlowTest2,tyrakcsgo@gmail.com,2,

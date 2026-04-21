@@ -2,192 +2,243 @@
 
 ## Overview
 
-This script provides a **robust and reusable pipeline** for pseudonymizing LimeSurvey datasets.
+This script provides a robust and reusable pipeline for pseudonymizing LimeSurvey datasets in longitudinal studies (T1–T3).
 
-It is designed for longitudinal research projects and ensures:
-- removal of direct identifiers
-- generation of persistent pseudonymous IDs (`pseudoID`)
-- consistent blinding of study groups
-- compatibility with evolving questionnaires (no script changes required)
+It ensures:
+- removal of direct identifiers  
+- generation of persistent pseudonymous IDs (pseudoID)  
+- generation of separate access tokens (token) for follow-up surveys  
+- consistent blinding of study groups  
+- compatibility with evolving questionnaires  
 
 ---
 
 ## Key Features
 
-- **Automatic pseudonymization**
-  - removes personal identifiers (e.g., name, email, phone)
-  - replaces them with a random `pseudoID`
+### Automatic pseudonymization
+- removes personal identifiers (e.g., name, email, phone)  
+- replaces them with a random pseudoID (analysis identifier)  
 
-- **Persistent mapping**
-  - ensures the same participant always receives the same `pseudoID`
-  - works across multiple time points (T1, T2, T3)
+---
 
-- **Study group blinding**
-  - converts groups (e.g., IG / CG) into random numeric codes
-  - prevents identification of intervention vs control group during analysis
+### Persistent participant tracking
+- participants are matched across time points using:  
+  - Name (primary identifier)  
+  - E-Mail (fallback if duplicate names exist)  
+- ensures:  
+  - same participant → same pseudoID across T1–T3  
 
-- **Future-proof design**
-  - automatically retains all new variables added to the dataset
-  - no need to adapt the script when the questionnaire changes
+---
+
+### Separate token generation
+- generates a random token independent of pseudoID  
+- used for:  
+  - LimeSurvey Participant List (T2, T3)  
+- ensures:  
+  - token is always different from pseudoID  
+
+---
+
+### LimeSurvey-compatible participant export
+The sensitive mapping file includes:
+- firstname  
+- lastname  
+- email  
+- token  
+- attribute_1 (studyGroup)  
+- attribute_2 (PhoneSystem)  
+
+→ can be directly used for T2/T3 participant import  
+
+---
+
+### Study group blinding
+- converts groups (e.g., IG / CG) into random numeric codes  
+- prevents identification during analysis  
+
+---
+
+### Future-proof design
+- automatically retains all new variables  
+- no script changes required when questionnaire evolves  
 
 ---
 
 ## Input
 
 - LimeSurvey export as:
-  - `.csv`
-  - `.xlsx`
+  - CSV  
+  - XLSX  
 
 - Must contain:
-  - a unique participant identifier (default: `id`)
+  - Name (required)  
+
+- Optional:
+  - eMailIG / eMailKG (used as fallback identifier)  
 
 ---
 
 ## Output
 
 ### 1. Analysis Dataset  
-`survey_pseudonymized.csv`
+survey_pseudonymized.csv  
 
-- contains:
-  - `pseudoID`
-  - all survey variables
-  - blinded `studyGroup`
-- excludes:
-  - all direct identifiers
-  - original `id`
+Contains:
+- pseudoID  
+- all survey variables  
+- blinded studyGroup  
+
+Excludes:
+- all direct identifiers  
+- matching keys (name/email)  
+- original id  
 
 ---
 
-### 2. Sensitive Mapping File
-`survey_mapping_sensitive.csv`
+### 2. Sensitive Mapping File  
+survey_mapping_sensitive.csv  
 
-- contains:
-  - original `id`
-  - `pseudoID`
-  - personal identifiers
-  - original study group
+Contains:
+- internal matching key (match_key)  
+- pseudoID (analysis identifier)  
+- token (LimeSurvey access code)  
+- firstname, lastname, email  
+- attribute_1 (studyGroup)  
+- attribute_2 (PhoneSystem)  
+- original identifiers  
 
-**Important:**  
-This file must be stored securely and must not be shared with analysts.
+Important:  
+This file must be stored securely and never shared with analysts.  
 
 ---
 
 ## How It Works
 
-### 1. First Run (e.g., T1)
+### First Run (T1)
 - generates:
-  - new `pseudoID` for each participant
-  - random numeric encoding of study groups
+  - pseudoID (random)  
+  - token (separate random code)  
+  - blinded study group  
+- builds:
+  - matching key (Name + optional Email)  
 - creates:
-  - mapping file (`survey_mapping_sensitive.csv`)
+  - mapping file  
 
 ---
 
-### 2. Subsequent Runs (T2, T3)
-- loads existing mapping file
+### Subsequent Runs (T2, T3)
+- loads existing mapping file  
+- matches participants via:
+  - Name  
+  - Email (if duplicates exist)  
 - reuses:
-  - same `pseudoID`
-  - same blinded study group
+  - same pseudoID  
+  - same token  
+  - same blinded study group  
 - adds:
-  - new participants if present
+  - new participants automatically  
+
+---
+
+## Participant Matching Logic
+
+Participants are matched using:
+
+1. Unique Name  
+   name::max muster  
+
+2. Duplicate Name → fallback to email  
+   name_email::max muster::max@mail.com  
+
+If:
+- same name AND  
+- no email available  
+
+→ the script stops with an error  
 
 ---
 
 ## Configuration
 
 Relevant parameters in the script:
-
-```python
-INPUT_FILE = "your_data.xlsx"
-MAPPING_FILE = "survey_mapping_sensitive.csv"
-PSEUDONYMIZED_OUTPUT = "survey_pseudonymized.csv"
-ID_COLUMN = "id"
-```
+- input file name  
+- mapping file name  
+- output file name  
 
 ---
 
 ## Removed Identifiers
-The script removes the following columns **if present:**
 
-```python
-DIRECT_IDENTIFIER_COLUMNS = [
-    "Name",
-    "eMailIG",
-    "eMailKG",
-    "PhoneSystem",
-    "randomGroup",
-]
-```
+The following columns are removed if present:
+- Name  
+- eMailIG  
+- eMailKG  
+- PhoneSystem  
+- randomGroup  
 
 ---
 
 ## Study Group Blinding
-Original values (e.g., IG, CG) are mapped to random numbers:
 
-For example:
+Example:
+- IG → 43  
+- CG → 57  
 
-**IG → 43**  
-**CG → 57**
+- mapping stored in sensitive file  
+- consistent across all waves  
 
-This mapping is:
-  - stored in the sensitive file
-  - consistent across all time points
+---
+
+## LimeSurvey Integration
+
+The mapping file can be used directly as participant import file:
+
+- firstname → participant name  
+- lastname → participant name  
+- email → contact  
+- token → access code  
+- attribute_1 → studyGroup  
+- attribute_2 → PhoneSystem  
 
 ---
 
 ## Usage
 
-### 1. Prepare your data
-
-- Export your survey data from LimeSurvey (or simulation)
-- Supported formats:
-  - `.csv`
-  - `.xlsx`
-- Place the file in the same directory as the script
+### 1. Prepare data
+- export from LimeSurvey  
+- place file in script directory  
 
 ---
 
-### 2. Configure the script
-
-Open `pseudonymize_limesurvey.py` and set the input file name (e.g., `your_data.xlsx`).
-
-If needed, you can also adjust:
-- the ID column (default: `id`)
-- the study group column (default: `studyGroup`)
+### 2. Configure script
+- set input file  
+- adjust column names if needed  
 
 ---
 
-### 3. Run the script
-
-Execute the script using Python from your terminal.
+### 3. Run script
+- execute with Python  
 
 ---
 
 ### 4. Outputs
-
-After running the script, two files are created:
-
-- `survey_pseudonymized.csv` → for analysis  
-- `survey_mapping_sensitive.csv` → sensitive mapping
+- survey_pseudonymized.csv → analysis  
+- survey_mapping_sensitive.csv → sensitive mapping  
 
 ---
 
 ## Updating with New Data
 
-The script is designed to handle updates seamlessly:
-
-- New participants → automatically added to the mapping  
-- Existing participants → matched via `id`  
-- New variables → automatically included  
-
-No changes to the script are required.
+- new participants → added automatically  
+- existing participants → matched via name/email  
+- new variables → included automatically  
 
 ---
 
-## Notes
+## Important Notes
 
-- Always keep `survey_mapping_sensitive.csv` in the same directory  
-  → it is required for consistent pseudonymization across time points  
-
-- Do not delete or modify the mapping file between runs  
-
+- keep survey_mapping_sensitive.csv unchanged between runs  
+- do not share the mapping file  
+- matching depends on:
+  - consistent spelling of names  
+  - availability of email for duplicates  
