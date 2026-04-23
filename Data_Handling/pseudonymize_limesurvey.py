@@ -14,7 +14,8 @@ os.chdir(SCRIPT_DIR)
 
 INPUT_FILE = "results-survey_T3.csv"
 MAPPING_FILE = "survey_mapping_sensitive.csv"
-PSEUDONYMIZED_OUTPUT = "survey_pseudonymized.csv"
+PSEUDONYMIZED_OUTPUT = "survey_pseudonymized_T3.csv"
+PARTICIPANTS_IMPORT_OUTPUT = "survey_participants_import.csv"
 
 ID_COLUMN = "id"
 MATCH_KEY_COLUMN = "match_key"
@@ -36,7 +37,23 @@ LASTNAME_COLUMN = "lastname"
 EMAIL_COLUMN = "email"
 ATTRIBUTE_1_COLUMN = "attribute_1"   # studyGroup
 ATTRIBUTE_2_COLUMN = "attribute_2"   # PhoneSystem
+ATTRIBUTE_3_COLUMN = "attribute_3"   # invitation date
+ATTRIBUTE_4_COLUMN = "attribute_4"   # reminder 1 date
+ATTRIBUTE_5_COLUMN = "attribute_5"   # reminder 2 date
+ATTRIBUTE_6_COLUMN = "attribute_6"   # reminder 3 date
 BLINDED_GROUP_COLUMN = "studyGroup_blind"
+
+# Source date for schedule creation.
+# Set this to the column that contains the participant-specific start date
+# of the first intervention phase.
+START_DATE_COLUMN = "submitdate"
+
+# Study schedule rules
+INVITATION_OFFSET_WEEKS = 12
+REMINDER_1_OFFSET_DAYS = 3
+REMINDER_2_OFFSET_DAYS = 7
+REMINDER_3_OFFSET_DAYS = 11
+DATE_OUTPUT_FORMAT = "%Y-%m-%d"
 
 
 # =========================================================
@@ -122,6 +139,45 @@ def split_name(value) -> tuple[str, str]:
     firstname = parts[0]
     lastname = " ".join(parts[1:])
     return firstname, lastname
+
+
+def parse_date_value(value) -> pd.Timestamp | None:
+    cleaned = clean_scalar(value)
+    if cleaned == "":
+        return None
+
+    # dayfirst=False keeps ISO handling stable; infer_datetime_format is deprecated
+    parsed = pd.to_datetime(cleaned, errors="coerce", utc=False)
+    return parsed
+
+
+def format_date_value(value) -> str:
+    if pd.isna(value):
+        return ""
+    return pd.Timestamp(value).strftime(DATE_OUTPUT_FORMAT)
+
+
+def calculate_schedule_from_start(start_value) -> dict[str, str]:
+    start_date = parse_date_value(start_value)
+    if pd.isna(start_date):
+        return {
+            ATTRIBUTE_3_COLUMN: "",
+            ATTRIBUTE_4_COLUMN: "",
+            ATTRIBUTE_5_COLUMN: "",
+            ATTRIBUTE_6_COLUMN: "",
+        }
+
+    invitation_date = start_date + pd.Timedelta(weeks=INVITATION_OFFSET_WEEKS)
+    reminder_1_date = invitation_date + pd.Timedelta(days=REMINDER_1_OFFSET_DAYS)
+    reminder_2_date = invitation_date + pd.Timedelta(days=REMINDER_2_OFFSET_DAYS)
+    reminder_3_date = invitation_date + pd.Timedelta(days=REMINDER_3_OFFSET_DAYS)
+
+    return {
+        ATTRIBUTE_3_COLUMN: format_date_value(invitation_date),
+        ATTRIBUTE_4_COLUMN: format_date_value(reminder_1_date),
+        ATTRIBUTE_5_COLUMN: format_date_value(reminder_2_date),
+        ATTRIBUTE_6_COLUMN: format_date_value(reminder_3_date),
+    }
 
 
 def get_group_blind_map(existing_groups):
@@ -213,11 +269,18 @@ def ensure_mapping_columns(mapping_df: pd.DataFrame) -> pd.DataFrame:
         EMAIL_COLUMN,
         ATTRIBUTE_1_COLUMN,
         ATTRIBUTE_2_COLUMN,
+        ATTRIBUTE_3_COLUMN,
+        ATTRIBUTE_4_COLUMN,
+        ATTRIBUTE_5_COLUMN,
+        ATTRIBUTE_6_COLUMN,
         BLINDED_GROUP_COLUMN,
     ] + DIRECT_IDENTIFIER_COLUMNS + [STUDYGROUP_COLUMN, "name_key", "email_key"]
 
     if ID_COLUMN not in mapping_df.columns:
         mapping_df[ID_COLUMN] = ""
+
+    if START_DATE_COLUMN not in mapping_df.columns:
+        mapping_df[START_DATE_COLUMN] = ""
 
     for col in required_columns:
         if col not in mapping_df.columns:
@@ -251,10 +314,8 @@ def backfill_mapping_columns(mapping_df: pd.DataFrame) -> pd.DataFrame:
             )
         mapping_df["email_key"] = mapping_df["email_key"].fillna("")
 
-    # Keep existing pseudoIDs; only normalize empties
     mapping_df[PSEUDOID_COLUMN] = mapping_df[PSEUDOID_COLUMN].replace("", pd.NA)
 
-    # Ensure token exists and is different from pseudoID
     existing_tokens = set()
     if TOKEN_COLUMN in mapping_df.columns:
         existing_tokens = set(
@@ -308,6 +369,13 @@ def backfill_mapping_columns(mapping_df: pd.DataFrame) -> pd.DataFrame:
     if "PhoneSystem" in mapping_df.columns:
         mapping_df[ATTRIBUTE_2_COLUMN] = mapping_df[ATTRIBUTE_2_COLUMN].fillna(mapping_df["PhoneSystem"])
 
+    # Keep existing schedule values if already present. Only fill missing ones from START_DATE_COLUMN.
+    schedule_df = mapping_df[START_DATE_COLUMN].apply(calculate_schedule_from_start).apply(pd.Series)
+    for schedule_col in [ATTRIBUTE_3_COLUMN, ATTRIBUTE_4_COLUMN, ATTRIBUTE_5_COLUMN, ATTRIBUTE_6_COLUMN]:
+        mapping_df[schedule_col] = mapping_df[schedule_col].replace("", pd.NA)
+        mapping_df[schedule_col] = mapping_df[schedule_col].fillna(schedule_df[schedule_col])
+        mapping_df[schedule_col] = mapping_df[schedule_col].fillna("")
+
     for col in [
         ID_COLUMN,
         MATCH_KEY_COLUMN,
@@ -318,20 +386,23 @@ def backfill_mapping_columns(mapping_df: pd.DataFrame) -> pd.DataFrame:
         EMAIL_COLUMN,
         ATTRIBUTE_1_COLUMN,
         ATTRIBUTE_2_COLUMN,
+        ATTRIBUTE_3_COLUMN,
+        ATTRIBUTE_4_COLUMN,
+        ATTRIBUTE_5_COLUMN,
+        ATTRIBUTE_6_COLUMN,
         BLINDED_GROUP_COLUMN,
         "Name",
         "PhoneSystem",
         "eMailIG",
         "eMailKG",
         STUDYGROUP_COLUMN,
+        START_DATE_COLUMN,
         "name_key",
         "email_key",
     ]:
         if col in mapping_df.columns:
             if col in [EMAIL_COLUMN, "eMailIG", "eMailKG", "email_key"]:
                 mapping_df[col] = mapping_df[col].apply(normalize_email)
-            elif col == "name_key":
-                mapping_df[col] = mapping_df[col].apply(normalize_name)
             else:
                 mapping_df[col] = mapping_df[col].apply(clean_scalar)
 
@@ -341,6 +412,12 @@ def backfill_mapping_columns(mapping_df: pd.DataFrame) -> pd.DataFrame:
 def build_or_update_mapping(df: pd.DataFrame, mapping_file: str) -> pd.DataFrame:
     df = ensure_matching_columns(df)
     validate_match_keys(df)
+
+    if START_DATE_COLUMN not in df.columns:
+        raise KeyError(
+            f"Required date column '{START_DATE_COLUMN}' not found in input file. "
+            "Please set START_DATE_COLUMN to the participant-specific intervention start date column."
+        )
 
     if Path(mapping_file).exists():
         mapping_df = pd.read_csv(mapping_file, dtype=str)
@@ -408,6 +485,9 @@ def build_or_update_mapping(df: pd.DataFrame, mapping_file: str) -> pd.DataFrame
         firstname, lastname = split_name(source_row["Name"]) if "Name" in df.columns else ("", "")
         email = pick_email(source_row)
         phone = clean_scalar(source_row["PhoneSystem"]) if "PhoneSystem" in df.columns else ""
+        orig_group = clean_scalar(source_row[STUDYGROUP_COLUMN]) if STUDYGROUP_COLUMN in df.columns else ""
+        start_date_raw = clean_scalar(source_row[START_DATE_COLUMN])
+        schedule = calculate_schedule_from_start(start_date_raw)
 
         row = {
             MATCH_KEY_COLUMN: participant_key,
@@ -415,6 +495,19 @@ def build_or_update_mapping(df: pd.DataFrame, mapping_file: str) -> pd.DataFrame
             "email_key": pick_email(source_row),
             ID_COLUMN: clean_scalar(source_row[ID_COLUMN]) if ID_COLUMN in df.columns else "",
             PSEUDOID_COLUMN: pseudoid,
+            START_DATE_COLUMN: start_date_raw,
+            STUDYGROUP_COLUMN: orig_group,
+            BLINDED_GROUP_COLUMN: existing_group_map.get(orig_group, ""),
+            TOKEN_COLUMN: token,
+            FIRSTNAME_COLUMN: firstname,
+            LASTNAME_COLUMN: lastname,
+            EMAIL_COLUMN: email,
+            ATTRIBUTE_1_COLUMN: orig_group,
+            ATTRIBUTE_2_COLUMN: phone,
+            ATTRIBUTE_3_COLUMN: schedule[ATTRIBUTE_3_COLUMN],
+            ATTRIBUTE_4_COLUMN: schedule[ATTRIBUTE_4_COLUMN],
+            ATTRIBUTE_5_COLUMN: schedule[ATTRIBUTE_5_COLUMN],
+            ATTRIBUTE_6_COLUMN: schedule[ATTRIBUTE_6_COLUMN],
         }
 
         for col in DIRECT_IDENTIFIER_COLUMNS:
@@ -422,26 +515,14 @@ def build_or_update_mapping(df: pd.DataFrame, mapping_file: str) -> pd.DataFrame
                 value = source_row[col]
                 row[col] = normalize_email(value) if col in ["eMailIG", "eMailKG"] else clean_scalar(value)
 
-        orig_group = ""
-        if STUDYGROUP_COLUMN in df.columns:
-            orig_group = clean_scalar(source_row[STUDYGROUP_COLUMN])
-            row[STUDYGROUP_COLUMN] = orig_group
-            row[BLINDED_GROUP_COLUMN] = existing_group_map.get(orig_group, "")
-
-        row[TOKEN_COLUMN] = token
-        row[FIRSTNAME_COLUMN] = firstname
-        row[LASTNAME_COLUMN] = lastname
-        row[EMAIL_COLUMN] = email
-        row[ATTRIBUTE_1_COLUMN] = orig_group
-        row[ATTRIBUTE_2_COLUMN] = phone
-
         new_rows.append(row)
 
     new_rows_df = pd.DataFrame(new_rows)
     if not new_rows_df.empty:
         new_rows_df = ensure_mapping_columns(new_rows_df)
     else:
-        new_rows_df = pd.DataFrame(columns=ensure_mapping_columns(pd.DataFrame()).columns)
+        mapping_template = ensure_mapping_columns(pd.DataFrame())
+        new_rows_df = pd.DataFrame(columns=mapping_template.columns)
 
     if mapping_df.empty:
         mapping_df = new_rows_df.copy()
@@ -496,32 +577,63 @@ def pseudonymize_dataset(df: pd.DataFrame, mapping_df: pd.DataFrame) -> pd.DataF
     return df
 
 
+def build_participants_import(mapping_df: pd.DataFrame) -> pd.DataFrame:
+    participants_df = mapping_df.copy()
+
+    import_columns = [
+        TOKEN_COLUMN,
+        FIRSTNAME_COLUMN,
+        LASTNAME_COLUMN,
+        EMAIL_COLUMN,
+        ATTRIBUTE_1_COLUMN,
+        ATTRIBUTE_2_COLUMN,
+        ATTRIBUTE_3_COLUMN,
+        ATTRIBUTE_4_COLUMN,
+        ATTRIBUTE_5_COLUMN,
+        ATTRIBUTE_6_COLUMN,
+    ]
+
+    for col in import_columns:
+        if col not in participants_df.columns:
+            participants_df[col] = ""
+
+    participants_df = participants_df[import_columns].copy()
+    participants_df = participants_df.drop_duplicates(subset=[TOKEN_COLUMN], keep="first")
+
+    return participants_df
+
+
 def main():
     random.seed(40)
+
 
     print(f"Working directory: {Path.cwd()}")
     print(f"Script file: {Path(__file__).resolve()}")
     print(f"Input file: {SCRIPT_DIR / INPUT_FILE}")
+    print(f"Configured START_DATE_COLUMN: {START_DATE_COLUMN}")
 
     df = read_survey_file(INPUT_FILE)
     mapping_df = build_or_update_mapping(df, MAPPING_FILE)
     analysis_df = pseudonymize_dataset(df, mapping_df)
+    participants_df = build_participants_import(mapping_df)
 
     mapping_path = SCRIPT_DIR / MAPPING_FILE
     analysis_path = SCRIPT_DIR / PSEUDONYMIZED_OUTPUT
+    participants_path = SCRIPT_DIR / PARTICIPANTS_IMPORT_OUTPUT
 
     mapping_df.to_csv(mapping_path, index=False)
     analysis_df.to_csv(analysis_path, index=False)
+    participants_df.to_csv(participants_path, index=False)
 
     print("Done.")
     print(f"Input rows: {len(df)}")
     print(f"Unique participants by match key: {mapping_df[MATCH_KEY_COLUMN].nunique()}")
     print(f"Mapping file written to: {mapping_path}")
     print(f"Analysis file written to: {analysis_path}")
+    print(f"Participants import written to: {participants_path}")
     print(f"PseudoIDs unique: {mapping_df[PSEUDOID_COLUMN].nunique()}")
     print(f"Tokens unique: {mapping_df[TOKEN_COLUMN].nunique()}")
     print(f"Rows with pseudoID == token: {(mapping_df[PSEUDOID_COLUMN] == mapping_df[TOKEN_COLUMN]).sum()}")
-
 
 if __name__ == "__main__":
     main()
