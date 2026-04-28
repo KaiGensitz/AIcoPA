@@ -12,9 +12,9 @@ import pandas as pd
 SCRIPT_DIR = Path(__file__).resolve().parent
 os.chdir(SCRIPT_DIR)
 
-INPUT_FILE = "results-survey_T3.csv"
+INPUT_FILE = "results-survey_T2.csv"
 MAPPING_FILE = "survey_mapping_sensitive.csv"
-PSEUDONYMIZED_OUTPUT = "survey_pseudonymized_T3.csv"
+PSEUDONYMIZED_OUTPUT = "survey_pseudonymized_T2.csv"
 PARTICIPANTS_IMPORT_OUTPUT = "survey_participants_import.csv"
 
 ID_COLUMN = "id"
@@ -54,6 +54,22 @@ REMINDER_1_OFFSET_DAYS = 3
 REMINDER_2_OFFSET_DAYS = 7
 REMINDER_3_OFFSET_DAYS = 11
 DATE_OUTPUT_FORMAT = "%Y-%m-%d"
+
+# =========================================================
+# ATTENTION CHECK / ACheck RULES
+# =========================================================
+APPLY_ATTENTION_CHECK_NA = True
+ATTENTION_CHECK_COLUMNS = ["ACheck1[ACheck1]", "KIM[ACheck2]"]
+ATTENTION_CHECK_CORRECT_VALUE = "3"
+MIN_CORRECT_ATTENTION_CHECKS = 1
+ATTENTION_CHECK_FAILURE_OUTPUT = "attention_check_failures.csv"
+ATTENTION_CHECK_KEEP_COLUMNS = [
+    PSEUDOID_COLUMN,
+    STUDYGROUP_COLUMN,
+    "timePoint",
+    "attention_check_correct_count",
+    "attention_check_failed",
+]
 
 
 # =========================================================
@@ -544,6 +560,63 @@ def build_or_update_mapping(df: pd.DataFrame, mapping_file: str) -> pd.DataFrame
     return mapping_df
 
 
+
+def add_attention_check_flags(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+
+    if not APPLY_ATTENTION_CHECK_NA:
+        df["attention_check_correct_count"] = pd.NA
+        df["attention_check_failed"] = False
+        return df
+
+    existing_acheck_cols = [col for col in ATTENTION_CHECK_COLUMNS if col in df.columns]
+    missing_acheck_cols = [col for col in ATTENTION_CHECK_COLUMNS if col not in df.columns]
+
+    if missing_acheck_cols:
+        print("Warning: Attention-check column(s) not found and ignored: " + ", ".join(missing_acheck_cols))
+
+    if not existing_acheck_cols:
+        print("Warning: No attention-check columns found. No ACheck NA rule applied.")
+        df["attention_check_correct_count"] = pd.NA
+        df["attention_check_failed"] = False
+        return df
+
+    correct_matrix = pd.DataFrame(index=df.index)
+    for col in existing_acheck_cols:
+        correct_matrix[col] = df[col].apply(lambda v: clean_scalar(v).replace("\xa0", " ").strip().startswith(ATTENTION_CHECK_CORRECT_VALUE))
+
+    df["attention_check_correct_count"] = correct_matrix.sum(axis=1).astype("Int64")
+    df["attention_check_failed"] = df["attention_check_correct_count"] < MIN_CORRECT_ATTENTION_CHECKS
+
+    return df
+
+
+def apply_attention_check_na_rule(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    df = add_attention_check_flags(df)
+
+    if not APPLY_ATTENTION_CHECK_NA or "attention_check_failed" not in df.columns:
+        return df, pd.DataFrame()
+
+    failed_mask = df["attention_check_failed"] == True
+
+    report_cols = [
+        col for col in [
+            PSEUDOID_COLUMN,
+            STUDYGROUP_COLUMN,
+            "timePoint",
+            "attention_check_correct_count",
+            "attention_check_failed",
+        ] + ATTENTION_CHECK_COLUMNS
+        if col in df.columns
+    ]
+    failure_report = df.loc[failed_mask, report_cols].copy()
+
+    keep_cols = [col for col in ATTENTION_CHECK_KEEP_COLUMNS if col in df.columns]
+    cols_to_na = [col for col in df.columns if col not in keep_cols]
+    df.loc[failed_mask, cols_to_na] = pd.NA
+
+    return df, failure_report
+
 def pseudonymize_dataset(df: pd.DataFrame, mapping_df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df = ensure_matching_columns(df)
@@ -606,31 +679,38 @@ def build_participants_import(mapping_df: pd.DataFrame) -> pd.DataFrame:
 def main():
     random.seed(40)
 
-
-    print(f"Working directory: {Path.cwd()}")
-    print(f"Script file: {Path(__file__).resolve()}")
-    print(f"Input file: {SCRIPT_DIR / INPUT_FILE}")
-    print(f"Configured START_DATE_COLUMN: {START_DATE_COLUMN}")
-
     df = read_survey_file(INPUT_FILE)
+
+    # Drop incomplete LimeSurvey rows without a usable name before matching.
+    # These are usually aborted/test rows and cannot be linked to the mapping file.
+    if "Name" in df.columns:
+        before_rows = len(df)
+        df = df[df["Name"].notna() & (df["Name"].astype(str).str.strip() != "")].copy()
+        dropped_rows = before_rows - len(df)
+        if dropped_rows > 0:
+            print(f"Dropped incomplete row(s) without Name before matching: {dropped_rows}")
+
     mapping_df = build_or_update_mapping(df, MAPPING_FILE)
     analysis_df = pseudonymize_dataset(df, mapping_df)
+    analysis_df, attention_failure_df = apply_attention_check_na_rule(analysis_df)
     participants_df = build_participants_import(mapping_df)
 
     mapping_path = SCRIPT_DIR / MAPPING_FILE
     analysis_path = SCRIPT_DIR / PSEUDONYMIZED_OUTPUT
     participants_path = SCRIPT_DIR / PARTICIPANTS_IMPORT_OUTPUT
+    attention_failure_path = SCRIPT_DIR / ATTENTION_CHECK_FAILURE_OUTPUT
 
     mapping_df.to_csv(mapping_path, index=False)
     analysis_df.to_csv(analysis_path, index=False)
     participants_df.to_csv(participants_path, index=False)
+    attention_failure_df.to_csv(attention_failure_path, index=False)
 
     print("Done.")
     print(f"Input rows: {len(df)}")
     print(f"Unique participants by match key: {mapping_df[MATCH_KEY_COLUMN].nunique()}")
-    print(f"Mapping file written to: {mapping_path}")
-    print(f"Analysis file written to: {analysis_path}")
-    print(f"Participants import written to: {participants_path}")
+    print(f"Rows set to NA due to failed attention checks: {len(attention_failure_df)}")
+    if len(attention_failure_df) > 0 and PSEUDOID_COLUMN in attention_failure_df.columns:
+        print("Affected pseudoIDs: " + ", ".join(attention_failure_df[PSEUDOID_COLUMN].astype(str).tolist()))
     print(f"PseudoIDs unique: {mapping_df[PSEUDOID_COLUMN].nunique()}")
     print(f"Tokens unique: {mapping_df[TOKEN_COLUMN].nunique()}")
     print(f"Rows with pseudoID == token: {(mapping_df[PSEUDOID_COLUMN] == mapping_df[TOKEN_COLUMN]).sum()}")
