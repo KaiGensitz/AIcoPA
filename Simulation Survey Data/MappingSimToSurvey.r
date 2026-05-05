@@ -14,7 +14,7 @@ library(stringr)
 # =========================================================
 # 1) Pfade
 # =========================================================
-template_path <- "c:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/results-survey581822.xlsx"
+template_path <- "c:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/results-survey581821.xlsx"
 sim_path      <- "c:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/AIcoPA_simulation_v3_itemdata.csv"
 output_path   <- "c:/Users/rre00/OneDrive - Universitaet Bern/Universität/Master/FS_26/Masterarbeit/Anstellung/Data_Simulation/AIcoPA_simulation_v3_export_like_template.xlsx"
 
@@ -185,6 +185,49 @@ if ("STG" %in% names(out)) {
 }
 
 # =========================================================
+# 8b) METtotal, PAFlag und PASubgroup
+# =========================================================
+
+pa_met_total <- with(sim,
+  ifelse(is.na(pa_vig_days), 0, pa_vig_days) *
+    ifelse(is.na(pa_vig_minutes), 0, pa_vig_minutes) * 9 +
+  ifelse(is.na(pa_mod_days), 0, pa_mod_days) *
+    ifelse(is.na(pa_mod_minutes), 0, pa_mod_minutes) * 5 +
+  ifelse(is.na(pa_light_days), 0, pa_light_days) *
+    ifelse(is.na(pa_light_minutes), 0, pa_light_minutes) * 3
+)
+
+if ("METtotal" %in% names(out)) {
+  out$METtotal <- round(pa_met_total, 0)
+}
+
+# PASubgroup:
+# < 650 MET-min = 1
+# >= 650 MET-min = 2
+if ("PASubgroup" %in% names(out)) {
+  out$PASubgroup <- ifelse(pa_met_total < 650, 1, 2)
+}
+
+# PAFlag nach LimeSurvey-Formel:
+# if((METtotal > 1500) and (STG == "MA"), 1, 0)
+# Im Export steht STG als Label, nicht als Code.
+stg_is_maintenance <- out$STG == "Ja, ich bin seit mindestens 6 Monaten regelmässig körperlich aktiv."
+
+if ("PAFlag" %in% names(out)) {
+  out$PAFlag <- ifelse(pa_met_total > 1500 & stg_is_maintenance, 1, 0)
+}
+
+# Da wir nur gültige Responses simulieren wollen:
+# Falls durch die Simulation doch Ausschlussfälle entstehen, werden sie entschärft.
+# Dadurch verlassen alle simulierten Personen die Formel mit PAFlag = 0.
+if ("PAFlag" %in% names(out) && "STG" %in% names(out)) {
+  flagged <- out$PAFlag == 1
+
+  out$STG[flagged] <- "Ja, allerdings bin ich erst seit weniger als 6 Monaten regelmässig körperlich aktiv."
+  out$PAFlag[flagged] <- 0
+}
+
+# =========================================================
 # 9) Haupt-Mapping: Konstrukte mit direkter Entsprechung
 # =========================================================
 rename_map <- c(
@@ -268,8 +311,8 @@ for (nm in names(kim_numeric)) {
   if (nm %in% names(out)) out[[nm]] <- to_likert_label_0_4(kim_numeric[[nm]])
 }
 
-if ("KIM[ACheck1]" %in% names(out)) {
-  out[["KIM[ACheck1]"]] <- to_likert_label_0_4(
+if ("KIM[ACheck2]" %in% names(out)) {
+  out[["KIM[ACheck2]"]] <- to_likert_label_0_4(
     safe_jitter_int(get_sim_col(sim, "intrinsic_mot_2"), 0, 4, 1)
   )
 }
@@ -317,7 +360,7 @@ zimo_map <- list(
   "ZiMo[figapp2]" = safe_jitter_int(zimo_base_body, 1, 5),
   "ZiMo[figapp3]" = safe_jitter_int(zimo_base_body, 1, 5),
 
-  "ZiMo[ACheck2]" = safe_jitter_int(zimo_base_fit, 1, 5)
+  "ZiMo[ACheck3]" = safe_jitter_int(zimo_base_fit, 1, 5)
 )
 
 for (nm in names(zimo_map)) {
@@ -424,6 +467,104 @@ if ("EntfernPOI[OutBew]" %in% names(out)) {
   out[["EntfernPOI[OutBew]"]] <- sim$OutBew
 }
 
+# Wohnort
+if ("Wohnort" %in% names(out)) {
+  out$Wohnort <- sample(
+    c(
+      "Ländliche Gemeinde / Dorf (unter 5.000 Einwohner:innen)",
+      "Kleinstadt (5.000 bis unter 20.000 Einwohner:innen)",
+      "Mittelstadt (20.000 bis unter 100.000 Einwohner:innen)",
+      "Grossstadt (100.000 bis unter 500.000 Einwohner:innen)",
+      "Metropole / Sehr große Stadt (500.000 Einwohner:innen oder mehr)"
+    ),
+    n,
+    replace = TRUE,
+    prob = c(0.15, 0.25, 0.30, 0.25, 0.05)
+  )
+}
+
+# Direkte Wohnumgebung: 1 = trifft voll und ganz zu, 5 = trifft gar nicht zu
+umgeb_labels <- c(
+  "Trifft voll und ganz zu",
+  "Trifft eher zu",
+  "Teils/teils",
+  "Trifft eher nicht zu",
+  "Trifft gar nicht zu"
+)
+
+if ("UmgebTyp[Ver]" %in% names(out)) {
+  out[["UmgebTyp[Ver]"]] <- sample(
+    umgeb_labels,
+    n,
+    replace = TRUE,
+    prob = c(0.15, 0.25, 0.25, 0.25, 0.10)
+  )
+}
+
+if ("UmgebTyp[Nat]" %in% names(out)) {
+  out[["UmgebTyp[Nat]"]] <- sample(
+    umgeb_labels,
+    n,
+    replace = TRUE,
+    prob = c(0.25, 0.30, 0.20, 0.15, 0.10)
+  )
+}
+
+if ("UmgebTyp[Mov]" %in% names(out)) {
+  out[["UmgebTyp[Mov]"]] <- sample(
+    umgeb_labels,
+    n,
+    replace = TRUE,
+    prob = c(0.30, 0.35, 0.20, 0.10, 0.05)
+  )
+}
+
+# Haushaltsgrösse
+if ("HHGroesse" %in% names(out)) {
+  out$HHGroesse <- sample(
+    1:5,
+    n,
+    replace = TRUE,
+    prob = c(0.25, 0.35, 0.18, 0.15, 0.07)
+  )
+}
+
+# Minderjährige im Haushalt nur sinnvoll, wenn HHGroesse > 1
+if ("HHMinderj" %in% names(out)) {
+  out$HHMinderj <- ifelse(
+    out$HHGroesse > 1,
+    pmin(out$HHGroesse - 1, rpois(n, lambda = 0.4)),
+    NA
+  )
+}
+
+# Care-Arbeit
+if ("CareArbeit" %in% names(out)) {
+  out$CareArbeit <- sample(
+    c("Ja", "Nein"),
+    n,
+    replace = TRUE,
+    prob = c(0.45, 0.55)
+  )
+}
+
+# Care-Stunden nur bei CareArbeit = Ja
+if ("CareStunden" %in% names(out)) {
+  out$CareStunden <- ifelse(
+    out$CareArbeit == "Ja",
+    pmax(1, round(rlnorm(n, meanlog = log(6), sdlog = 0.6))),
+    NA
+  )
+}
+
+# Soziale Kontakte in Stunden pro Woche
+if ("Social" %in% names(out)) {
+  out$Social <- pmax(
+    0,
+    round(rnorm(n, mean = 10, sd = 6))
+  )
+}
+
 # =========================================================
 # 13) TAM
 # =========================================================
@@ -450,6 +591,10 @@ for (sim_name in names(tam_map)) {
   if (sim_name %in% names(sim) && target %in% names(out)) {
     out[[target]] <- sim[[sim_name]]
   }
+}
+
+if ("ACheck1[ACheck1]" %in% names(out)) {
+  out[["ACheck1[ACheck1]"]] <- "Stimme eher nicht zu"
 }
 
 # Zusatzitems aus vorhandenen TAM-Items ableiten
@@ -644,6 +789,29 @@ rownames(out) <- NULL
 time_cols <- grep("Time$", names(out), value = TRUE)
 
 out <- out[, !names(out) %in% time_cols]
+
+# =========================================================
+# Final consistency fix: PAFlag must truly evaluate to 0
+# =========================================================
+
+# Exact LimeSurvey STG label that would trigger exclusion together with METtotal > 1500
+maintenance_label <- "Ja, und ich bin seit mehr als 6 Monaten regelmässig körperlich aktiv."
+
+# Alternative valid STG label for simulated valid participants
+alternative_stg_label <- "Ja, aber ich bin noch nicht seit mehr als 6 Monaten regelmässig körperlich aktiv."
+
+# Identify cases that would trigger LimeSurvey exclusion logic
+flagged <- out$METtotal > 1500 & out$STG == maintenance_label
+
+# Correct STG so that these cases no longer fulfil the exclusion condition
+out$STG[flagged] <- alternative_stg_label
+
+# Recalculate PAFlag exactly according to LimeSurvey logic
+out$PAFlag <- ifelse(
+  out$METtotal > 1500 & out$STG == maintenance_label,
+  1,
+  0
+)
 
 # =========================================================
 # 18) Export
