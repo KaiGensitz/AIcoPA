@@ -9,7 +9,8 @@ It ensures:
 - generation of persistent pseudonymous IDs (pseudoID)  
 - generation of separate access tokens (token) for follow-up surveys  
 - consistent blinding of study groups  
-- compatibility with evolving questionnaires  
+- compatibility with evolving questionnaires
+- automated attention check handling (T2/T3)
 
 ---
 
@@ -46,7 +47,11 @@ The sensitive mapping file includes:
 - email  
 - token  
 - attribute_1 (studyGroup)  
-- attribute_2 (PhoneSystem)  
+- attribute_2 (PhoneSystem)
+- attribute_3 (Invitation Date -> Submitdate T1/T2 + 12 Weeks)
+- attribute_4 (Reminder1 Date -> Invite + 3 Days)
+- attribute_5 (Reminder2 Date -> Invite + 7 Days)
+- attribute_6 (Reminder3 Date -> Invite + 11 Days)
 
 → can be directly used for T2/T3 participant import  
 
@@ -55,6 +60,16 @@ The sensitive mapping file includes:
 ### Study group blinding
 - converts groups (e.g., IG / CG) into random numeric codes  
 - prevents identification during analysis  
+
+---
+
+### Attention check handling (T2/T3)
+- evaluates predefined attention check items
+- correct = response starting with "3"
+- at least one correct answer required
+
+If not passed: all survey variables are set to NA and a 
+separate report file is created listing all failed cases
 
 ---
 
@@ -86,7 +101,8 @@ survey_pseudonymized.csv
 Contains:
 - pseudoID  
 - all survey variables  
-- blinded studyGroup  
+- blinded studyGroup
+- attention check indicators
 
 Excludes:
 - all direct identifiers  
@@ -104,11 +120,27 @@ Contains:
 - token (LimeSurvey access code)  
 - firstname, lastname, email  
 - attribute_1 (studyGroup)  
-- attribute_2 (PhoneSystem)  
+- attribute_2 (PhoneSystem)
+- attribute_3 (Invitation Date -> Submitdate T1/T2 + 12 Weeks)
+- attribute_4 (Reminder1 Date -> Invite + 3 Days)
+- attribute_5 (Reminder2 Date -> Invite + 7 Days)
+- attribute_6 (Reminder3 Date -> Invite + 11 Days)
 - original identifiers  
 
 Important:  
 This file must be stored securely and never shared with analysts.  
+
+---
+### 3. Attention Check Report
+attention_check_failures.csv
+
+Contains:
+- pseudoID
+- studyGroup
+- timePoint
+- number of passed attention checks
+- failure flag
+- raw attention check responses
 
 ---
 
@@ -163,7 +195,8 @@ If:
 Relevant parameters in the script:
 - input file name  
 - mapping file name  
-- output file name  
+- output file name
+- attention check settings (true/false, columns, correct value, threshold)
 
 ---
 
@@ -238,7 +271,8 @@ The mapping file can be used directly as participant import file:
 ## Important Notes
 
 - keep survey_mapping_sensitive.csv unchanged between runs  
-- do not share the mapping file  
+- do not share the mapping file
+- attention check filtering only applies if enabled in the script
 - matching depends on:
   - consistent spelling of names  
   - availability of email for duplicates  
