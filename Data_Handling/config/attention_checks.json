@@ -1,0 +1,5 @@
+{
+  "columns": ["ACheck1[ACheck1]", "KIM[ACheck2]"],
+  "correct_prefix": "3",
+  "min_correct": 1
+}

@@ -1,0 +1,2 @@
+id,submitdate,startdate,datestamp,token,refurl,Name,eMailIG,eMailKG,PhoneSystem,randomGroup,studyGroup,ACheck1[ACheck1],KIM[ACheck2],ACheck3[ACheck3],activity_score,motivation_score,QualPos,SomeNewColumn,NameTime
+3,2026-04-01 10:00:00,2026-04-01 09:55:00,2026-04-01 10:00:00,ORIGINALTOKEN3,https://survey.example/token,Alex Demo,alex@example.test,,iOS,IG,IG,3 - correct,1 - wrong,3 - correct,6,8,"free text",review later,14
