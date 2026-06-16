@@ -1,278 +1,113 @@
-# LimeSurvey Pseudonymization Script
-
-## Overview
-
-This script provides a robust and reusable pipeline for pseudonymizing LimeSurvey datasets in longitudinal studies (T1–T3).
-
-It ensures:
-- removal of direct identifiers  
-- generation of persistent pseudonymous IDs (pseudoID)  
-- generation of separate access tokens (token) for follow-up surveys  
-- consistent blinding of study groups  
-- compatibility with evolving questionnaires
-- automated attention check handling (T2/T3)
-
----
-
-## Key Features
-
-### Automatic pseudonymization
-- removes personal identifiers (e.g., name, email, phone)  
-- replaces them with a random pseudoID (analysis identifier)  
-
----
-
-### Persistent participant tracking
-- participants are matched across time points using:  
-  - Name (primary identifier)  
-  - E-Mail (fallback if duplicate names exist)  
-- ensures:  
-  - same participant → same pseudoID across T1–T3  
-
----
-
-### Separate token generation
-- generates a random token independent of pseudoID  
-- used for:  
-  - LimeSurvey Participant List (T2, T3)  
-- ensures:  
-  - token is always different from pseudoID  
-
----
-
-### LimeSurvey-compatible participant export
-The sensitive mapping file includes:
-- firstname  
-- lastname  
-- email  
-- token  
-- attribute_1 (studyGroup)  
-- attribute_2 (PhoneSystem)
-- attribute_3 (Invitation Date -> Submitdate T1/T2 + 12 Weeks)
-- attribute_4 (Reminder1 Date -> Invite + 3 Days)
-- attribute_5 (Reminder2 Date -> Invite + 7 Days)
-- attribute_6 (Reminder3 Date -> Invite + 11 Days)
-
-→ can be directly used for T2/T3 participant import  
-
----
-
-### Study group blinding
-- converts groups (e.g., IG / CG) into random numeric codes  
-- prevents identification during analysis  
-
----
-
-### Attention check handling (T2/T3)
-- evaluates predefined attention check items
-- correct = response starting with "3"
-- at least one correct answer required
-
-If not passed: all survey variables are set to NA and a 
-separate report file is created listing all failed cases
-
----
-
-### Future-proof design
-- automatically retains all new variables  
-- no script changes required when questionnaire evolves  
-
----
-
-## Input
-
-- LimeSurvey export as:
-  - CSV  
-  - XLSX  
-
-- Must contain:
-  - Name (required)  
-
-- Optional:
-  - eMailIG / eMailKG (used as fallback identifier)  
-
----
-
-## Output
-
-### 1. Analysis Dataset  
-survey_pseudonymized.csv  
-
-Contains:
-- pseudoID  
-- all survey variables  
-- blinded studyGroup
-- attention check indicators
-
-Excludes:
-- all direct identifiers  
-- matching keys (name/email)  
-- original id  
-
----
-
-### 2. Sensitive Mapping File  
-survey_mapping_sensitive.csv  
-
-Contains:
-- internal matching key (match_key)  
-- pseudoID (analysis identifier)  
-- token (LimeSurvey access code)  
-- firstname, lastname, email  
-- attribute_1 (studyGroup)  
-- attribute_2 (PhoneSystem)
-- attribute_3 (Invitation Date -> Submitdate T1/T2 + 12 Weeks)
-- attribute_4 (Reminder1 Date -> Invite + 3 Days)
-- attribute_5 (Reminder2 Date -> Invite + 7 Days)
-- attribute_6 (Reminder3 Date -> Invite + 11 Days)
-- original identifiers  
-
-Important:  
-This file must be stored securely and never shared with analysts.  
-
----
-### 3. Attention Check Report
-attention_check_failures.csv
-
-Contains:
-- pseudoID
-- studyGroup
-- timePoint
-- number of passed attention checks
-- failure flag
-- raw attention check responses
-
----
-
-## How It Works
-
-### First Run (T1)
-- generates:
-  - pseudoID (random)  
-  - token (separate random code)  
-  - blinded study group  
-- builds:
-  - matching key (Name + optional Email)  
-- creates:
-  - mapping file  
-
----
-
-### Subsequent Runs (T2, T3)
-- loads existing mapping file  
-- matches participants via:
-  - Name  
-  - Email (if duplicates exist)  
-- reuses:
-  - same pseudoID  
-  - same token  
-  - same blinded study group  
-- adds:
-  - new participants automatically  
-
----
-
-## Participant Matching Logic
-
-Participants are matched using:
-
-1. Unique Name  
-   name::max muster  
-
-2. Duplicate Name → fallback to email  
-   name_email::max muster::max@mail.com  
-
-If:
-- same name AND  
-- no email available  
-
-→ the script stops with an error  
-
----
-
-## Configuration
-
-Relevant parameters in the script:
-- input file name  
-- mapping file name  
-- output file name
-- attention check settings (true/false, columns, correct value, threshold)
-
----
-
-## Removed Identifiers
-
-The following columns are removed if present:
-- Name  
-- eMailIG  
-- eMailKG  
-- PhoneSystem  
-- randomGroup  
-
----
-
-## Study Group Blinding
-
-Example:
-- IG → 43  
-- CG → 57  
-
-- mapping stored in sensitive file  
-- consistent across all waves  
-
----
-
-## LimeSurvey Integration
-
-The mapping file can be used directly as participant import file:
-
-- firstname → participant name  
-- lastname → participant name  
-- email → contact  
-- token → access code  
-- attribute_1 → studyGroup  
-- attribute_2 → PhoneSystem  
-
----
-
-## Usage
-
-### 1. Prepare data
-- export from LimeSurvey  
-- place file in script directory  
-
----
-
-### 2. Configure script
-- set input file  
-- adjust column names if needed  
-
----
-
-### 3. Run script
-- execute with Python  
-
----
-
-### 4. Outputs
-- survey_pseudonymized.csv → analysis  
-- survey_mapping_sensitive.csv → sensitive mapping  
-
----
-
-## Updating with New Data
-
-- new participants → added automatically  
-- existing participants → matched via name/email  
-- new variables → included automatically  
-
----
-
-## Important Notes
-
-- keep survey_mapping_sensitive.csv unchanged between runs  
-- do not share the mapping file
-- attention check filtering only applies if enabled in the script
-- matching depends on:
-  - consistent spelling of names  
-  - availability of email for duplicates  
+# Data handling and LimeSurvey pseudonymization
+
+> **Synthetic demo data only:** any example CSV files committed under
+> `Data_Handling/examples/synthetic/` or `Data_Handling/tests/fixtures/` are
+> synthetic demo/test data. Legacy synthetic/template survey artifacts that were
+> previously in the repository root have been moved to
+> `Data_Handling/examples/synthetic/legacy_or_templates/`. These files must never
+> be replaced with real participant data. Real LimeSurvey exports, mapping files,
+> participant imports, pseudonymized outputs, and QC reports must be processed
+> outside the repository or in ignored secure folders.
+
+This folder contains a **pseudonymization workflow** for an active longitudinal
+T1/T2/T3 LimeSurvey study. It is not a full anonymization or open-data release
+pipeline. The sensitive mapping/contact workflow is intentionally retained while
+follow-up invitations, reminders, withdrawals, and longitudinal linkage are
+needed during the active study phase.
+
+## Pseudonymization is not anonymization
+
+Pseudonymization replaces direct identifiers with a stable `pseudoID` so that
+T1/T2/T3 records can be linked for analysis. Because a sensitive mapping file
+can reconnect `pseudoID` and survey tokens to names/emails, pseudonymized data
+are still personal data. The default `processed/` analysis outputs are therefore
+**not anonymous** and must be protected accordingly.
+
+A future anonymized release pipeline should be separate from this workflow and
+should remove or transform linkage IDs, exact dates, rare quasi-identifiers,
+technical metadata, and free text according to a documented risk assessment.
+
+## Sensitive and generated data
+
+The following files are sensitive in real study use and are ignored by default:
+
+- raw LimeSurvey exports;
+- `sensitive/` mapping/contact/token files;
+- participant import files for LimeSurvey invitations/reminders;
+- `processed/` pseudonymized analysis outputs;
+- `qc/` participant-level quality-control reports.
+
+Mapping, contact, and token files must be stored separately from analysis data,
+preferably outside this repository on encrypted institutional storage with
+restricted access. Tokens are operational identifiers and are never included in
+the default pseudonymized analysis output.
+
+## Indirect identifiers and default exclusions
+
+Exact dates, timestamps, LimeSurvey technical metadata, referrer URLs, response
+`*Time` columns, and free-text variables may be indirect identifiers. The script
+therefore excludes them from default analysis output unless explicitly allowed.
+Unknown columns generate a review warning in demo mode and fail production mode by default.
+
+`config/variable_classification.json` is a **minimal demo/template config**,
+not a complete real-study T1/T2/T3 variable dictionary. Before processing real
+exports, all real LimeSurvey analysis variables must be reviewed and added to
+the config. Otherwise production mode will fail on unknown columns by default,
+or reviewed unknown columns will be excluded from the default analysis output.
+
+Variable handling is controlled by `config/variable_classification.json`:
+
+- `analysis_allowlist`: variables allowed into default analysis output;
+- `direct_identifier_columns`: direct/contact/linkage fields that must not enter
+  analysis output;
+- `technical_metadata_columns`: date/time/referrer fields excluded by default;
+- `free_text_columns`: open-text fields excluded by default.
+
+## Folder structure
+
+```text
+Data_Handling/
+  config/                 # synthetic-safe configuration templates
+  scripts/                # pseudonymization code
+  examples/synthetic/     # committed synthetic examples only
+  tests/                  # synthetic tests and fixtures
+  sensitive/              # ignored mapping/contact/token outputs
+  processed/              # ignored pseudonymized analysis outputs
+  qc/                     # ignored QC reports
+```
+
+## Running the pseudonymization script
+
+Example demo run with synthetic data:
+
+```bash
+python3 Data_Handling/scripts/pseudonymize_limesurvey.py \
+  --mode demo \
+  --wave T1 \
+  --input Data_Handling/examples/synthetic/raw/synthetic_results-survey_T1.csv \
+  --mapping Data_Handling/sensitive/survey_mapping_sensitive.csv \
+  --participants-output Data_Handling/sensitive/survey_participants_import.csv \
+  --analysis-output Data_Handling/processed/survey_pseudonymized_T1.csv \
+  --qc-output Data_Handling/qc/attention_check_failures_T1.csv
+```
+
+For real data, use `--mode production` and secure non-repository paths where
+possible. Production mode fails on unknown/unclassified columns by default; only
+use `--allow-unknown-columns` after documenting that the excluded variables have
+been reviewed. `--mode demo` is restricted to synthetic/test paths because it
+uses deterministic IDs/tokens.
+
+Risk flags:
+
+- `--allow-technical-metadata` can reintroduce exact dates, timestamps, referrer
+  URLs, and LimeSurvey timing metadata. Use it only after variable-level review.
+- `--allow-free-text` can reintroduce participant-provided content that may
+  contain names, locations, rare events, or other identifying details. Use it
+  only after variable-level review and a documented handling decision.
+
+## Attention checks
+
+Attention-check columns and the default threshold are configured in
+`config/attention_checks.json`. A 2/3 rule is supported by configuring three
+columns and `"min_correct": 2`, or by passing `--attention-min-correct 2` for a
+specific run. The script does not assume a 2/3 rule unless configured.

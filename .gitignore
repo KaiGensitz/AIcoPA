@@ -1,0 +1,22 @@
+# Repository-wide privacy protection for LimeSurvey/raw/sensitive/generated files.
+# Real participant data must not be committed. Keep synthetic/demo data only in
+# clearly labelled examples/synthetic/ folders.
+
+results-survey*.csv
+results-survey*.xlsx
+survey_mapping_sensitive*.csv
+survey_participants_import*.csv
+survey_pseudonymized*.csv
+attention_check_failures*.csv
+*mapping*sensitive*.csv
+*participant*import*.csv
+
+# Common generated data folders if created at repository root.
+/raw/
+/sensitive/
+/processed/
+/qc/
+
+# Python generated files.
+__pycache__/
+*.py[cod]

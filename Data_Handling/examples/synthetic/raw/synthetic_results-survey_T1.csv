@@ -1,0 +1,3 @@
+id,submitdate,startdate,datestamp,token,refurl,Name,eMailIG,eMailKG,PhoneSystem,randomGroup,studyGroup,ACheck1[ACheck1],KIM[ACheck2],ACheck3[ACheck3],activity_score,motivation_score,QualPos,SomeNewColumn,NameTime
+1,2026-01-01 10:00:00,2026-01-01 09:55:00,2026-01-01 10:00:00,ORIGINALTOKEN,https://survey.example/token,Alex Demo,alex@example.test,,iOS,IG,IG,3 - correct,3 - correct,3 - correct,5,7,"I mention a place",review me,12
+2,2026-01-02 11:00:00,2026-01-02 10:55:00,2026-01-02 11:00:00,ORIGINALTOKEN2,https://survey.example/token,Casey Demo,casey@example.test,,Android,CG,CG,1 - wrong,3 - correct,3 - correct,4,6,"free text",review me too,8

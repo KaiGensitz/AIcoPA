@@ -1,0 +1,42 @@
+{
+  "analysis_allowlist": [
+    "timePoint",
+    "studyGroup_blind",
+    "ACheck1[ACheck1]",
+    "KIM[ACheck2]",
+    "ACheck3[ACheck3]",
+    "activity_score",
+    "motivation_score"
+  ],
+  "free_text_columns": [
+    "TransferAppDetail",
+    "QualPos",
+    "QualNeg",
+    "otherAppUse",
+    "QualOthApp",
+    "SystemLink"
+  ],
+  "direct_identifier_columns": [
+    "Name",
+    "firstname",
+    "lastname",
+    "email",
+    "eMailIG",
+    "eMailKG",
+    "PhoneSystem",
+    "randomGroup",
+    "match_key",
+    "name_key",
+    "email_key",
+    "token",
+    "refurl",
+    "id"
+  ],
+  "technical_metadata_columns": [
+    "submitdate",
+    "startdate",
+    "datestamp",
+    "interviewtime",
+    "refurl"
+  ]
+}

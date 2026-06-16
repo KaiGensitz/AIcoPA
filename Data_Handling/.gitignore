@@ -1,0 +1,29 @@
+# Real LimeSurvey exports and generated outputs must not be committed.
+# Only clearly synthetic files under examples/synthetic/ and tests/fixtures/ are intended for git.
+
+/raw/
+/sensitive/*
+/processed/*
+/qc/*
+
+# keep folder placeholders
+!/sensitive/.gitkeep
+!/processed/.gitkeep
+!/qc/.gitkeep
+
+# common real/generated file patterns anywhere below Data_Handling
+**/results-survey*.csv
+**/results-survey*.xlsx
+**/survey_mapping_sensitive*.csv
+**/survey_participants_import*.csv
+**/survey_pseudonymized*.csv
+**/attention_check_failures*.csv
+**/*mapping*sensitive*.csv
+**/*participant*import*.csv
+
+# allow synthetic fixtures/examples
+!/examples/synthetic/**
+!/tests/fixtures/**
+
+__pycache__/
+*.py[cod]
