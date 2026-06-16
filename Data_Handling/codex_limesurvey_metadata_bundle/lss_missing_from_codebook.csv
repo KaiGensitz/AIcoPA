@@ -1,8 +1,0 @@
-limesurvey_export_name,question_title,subquestion_title,question_type,qid,subqid,crosswalk_match_type,question_text,subquestion_text
-utmsource,utmsource,,S,315241,,no_direct_match,utm_source,
-utmmedium,utmmedium,,S,315242,,no_direct_match,utm_medium,
-utmcampaign,utmcampaign,,S,315243,,no_direct_match,utm_campaign,
-utmcontent,utmcontent,,S,315244,,no_direct_match,utm_content,
-BeschaeftProz,BeschaeftProz,,N,315451,,no_direct_match,Wie hoch ist dein aktueller Beschäftigungsgrad bzw. dein Ausbildungs-/Studienpensum in Prozent?,
-UrlaubWochen,UrlaubWochen,,N,315452,,no_direct_match,Wie viele Wochen Urlaub/Ferien hast du ungefähr pro Jahr?,
-StressWochen,StressWochen,,N,315453,,no_direct_match,"Wenn du an ein typisches Jahr denkst: In wie vielen Wochen pro Jahr erlebst du deinen Alltag insgesamt als deutlich stressiger oder belastender als gewöhnlich? Gemeint sind Wochen, in denen du dich durch Arbeit, Studium, Ausbildung, Familie oder andere Verpflichtungen deutlich stärker belastet fühls",
