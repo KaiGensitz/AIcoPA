@@ -1,0 +1,19 @@
+{
+  "codebook_variable_count": 166,
+  "lss_main_question_count": 82,
+  "lss_subquestion_count": 121,
+  "likely_export_column_count_including_metadata": 195,
+  "lss_variables_missing_codebook_match_count": 7,
+  "codebook_variables_not_found_in_lss_count": 0,
+  "name_diff_count": 121,
+  "classification_counts": {
+    "technical_metadata": 7,
+    "contact_or_operational": 11,
+    "direct_identifier": 12,
+    "exclusion_or_qc_variable": 8,
+    "quasi_identifier": 36,
+    "sensitive_analysis_variable": 110,
+    "free_text": 7,
+    "recruitment_metadata": 4
+  }
+}
