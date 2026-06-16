@@ -17,6 +17,13 @@ attention_check_failures*.csv
 /processed/
 /qc/
 
+# Generated individual export packages and review artifacts.
+Data_Handling/sensitive/individual_data_requests/
+Data_Handling/sensitive/individual_data_requests/**
+individual_data_export*.zip
+request_*_participant_data*.csv
+request_*_participant_data*.json
+
 # Python generated files.
 __pycache__/
 *.py[cod]

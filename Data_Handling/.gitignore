@@ -20,6 +20,11 @@
 **/attention_check_failures*.csv
 **/*mapping*sensitive*.csv
 **/*participant*import*.csv
+**/individual_data_requests/
+**/individual_data_requests/**
+**/individual_data_export*.zip
+**/request_*_participant_data*.csv
+**/request_*_participant_data*.json
 
 # allow synthetic fixtures/examples
 !/examples/synthetic/**
