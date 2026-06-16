@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import importlib.util
 import json
 import random
 import re
@@ -40,6 +41,39 @@ def read_csv(path: Path) -> list[dict[str, str]]:
         except UnicodeDecodeError:
             continue
     raise ValueError(f"Could not read {path} with supported encodings")
+
+
+def read_excel(path: Path) -> list[dict[str, str]]:
+    if importlib.util.find_spec("openpyxl") is None:
+        raise ImportError("openpyxl is required to read .xlsx files. Install it with 'pip install openpyxl'.")
+    import openpyxl
+
+    workbook = openpyxl.load_workbook(path, data_only=True, read_only=True)
+    try:
+        sheet = workbook.active
+        raw_rows = list(sheet.iter_rows(values_only=True))
+    finally:
+        workbook.close()
+
+    if not raw_rows:
+        return []
+
+    headers = [str(cell) if cell is not None else "" for cell in raw_rows[0]]
+    rows: list[dict[str, str]] = []
+    for raw_row in raw_rows[1:]:
+        raw_row = raw_row or []
+        row = {
+            headers[index]: "" if index >= len(raw_row) or raw_row[index] is None else str(raw_row[index])
+            for index in range(len(headers))
+        }
+        rows.append(row)
+    return rows
+
+
+def read_input(path: Path) -> list[dict[str, str]]:
+    if path.suffix.lower() == ".xlsx":
+        return read_excel(path)
+    return read_csv(path)
 
 
 def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) -> None:
@@ -112,7 +146,7 @@ def date_plus(value: str, days: int) -> str:
 
 
 def load_mapping(path: Path) -> list[dict[str, str]]:
-    return read_csv(path) if path.exists() else []
+    return read_input(path) if path.exists() else []
 
 
 def build_or_update_mapping(rows: list[dict[str, str]], mapping_rows: list[dict[str, str]], demo: bool) -> list[dict[str, str]]:
@@ -168,20 +202,55 @@ def build_or_update_mapping(rows: list[dict[str, str]], mapping_rows: list[dict[
     return mapping_rows
 
 
-def classify_columns(headers: list[str], config: dict, allow_technical: bool, allow_free_text: bool) -> tuple[list[str], list[str]]:
-    allow = set(config.get("analysis_allowlist", []))
+def classify_columns(headers: list[str], config: dict, allow_technical: bool, allow_free_text: bool) -> tuple[list[str], list[tuple[str, str]]]:
     direct = DEFAULT_IDENTIFIER_COLUMNS | set(config.get("direct_identifier_columns", []))
-    technical = DEFAULT_TECHNICAL_COLUMNS | set(config.get("technical_metadata_columns", [])) | {h for h in headers if h.endswith("Time")}
+    raw_operational = {"randomGroup", "studyGroup", "SystemLink", "eMailValidIG", "eMailValidKG"}
+    technical = DEFAULT_TECHNICAL_COLUMNS | set(config.get("technical_metadata_columns", []))
     free_text = DEFAULT_FREE_TEXT_COLUMNS | set(config.get("free_text_columns", []))
-    excluded = direct | (set() if allow_technical else technical) | (set() if allow_free_text else free_text)
-    analysis = [h for h in headers if h in allow and h not in excluded]
-    unknown = [h for h in headers if h not in allow and h not in excluded]
-    return analysis, unknown
+
+    def is_privacy_risky(field: str) -> bool:
+        lower = field.lower()
+        return (
+            field in free_text
+            or "comment" in lower
+            or "other" in lower
+            or lower.endswith("[other]")
+            or field == "Wohnort"
+        )
+
+    keep: list[str] = []
+    dropped: list[tuple[str, str]] = []
+    for field in headers:
+        if field in direct:
+            dropped.append((field, "direct identifier or contact field"))
+        elif field in raw_operational:
+            dropped.append((field, "raw/unblinded operational field"))
+        elif field in technical or field.endswith("Time") or field.startswith("groupTime"):
+            if allow_technical:
+                keep.append(field)
+            else:
+                dropped.append((field, "technical metadata or timing field"))
+        elif is_privacy_risky(field):
+            if allow_free_text:
+                keep.append(field)
+            else:
+                dropped.append((field, "free-text or privacy-risky field"))
+        else:
+            keep.append(field)
+    return keep, dropped
 
 
-def build_analysis(rows: list[dict[str, str]], mapping: dict[str, dict[str, str]], config: dict, args) -> tuple[list[dict[str, object]], list[str]]:
+def build_analysis(rows: list[dict[str, str]], mapping: dict[str, dict[str, str]], config: dict, args) -> tuple[list[dict[str, object]], list[str], dict]:
     headers = list(rows[0].keys()) if rows else []
-    keep, unknown = classify_columns(headers, config, args.allow_technical_metadata, args.allow_free_text)
+    keep, dropped = classify_columns(headers, config, args.allow_technical_metadata, args.allow_free_text)
+    allow = set(config.get("analysis_allowlist", []))
+    kept_automatic = [field for field in keep if field not in {"timePoint", "studyGroup_blind"}]
+    new_kept_columns = [field for field in kept_automatic if field not in allow]
+    columns_review = {
+        "kept_automatic": kept_automatic,
+        "dropped_automatic": [{"column": field, "reason": reason} for field, reason in dropped],
+        "new_kept_columns": new_kept_columns,
+    }
     out_fields = ["pseudoID", "timePoint", "studyGroup_blind"] + [c for c in keep if c not in {"timePoint", "studyGroup_blind"}]
     out_rows = []
     for row in rows:
@@ -190,7 +259,7 @@ def build_analysis(rows: list[dict[str, str]], mapping: dict[str, dict[str, str]
         for col in keep:
             out[col] = row.get(col, "")
         out_rows.append(out)
-    return out_rows, out_fields
+    return out_rows, out_fields, columns_review
 
 
 def attention_failures(analysis_rows: list[dict[str, object]], config: dict) -> list[dict[str, object]]:
@@ -257,7 +326,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.mode == "demo":
         validate_demo_input_path(args.input)
 
-    rows = read_csv(args.input)
+    rows = read_input(args.input)
     make_match_keys(rows)
     var_config = load_json(args.variable_config, {})
     att_config = load_json(args.attention_config, {})
@@ -266,18 +335,16 @@ def main(argv: list[str] | None = None) -> int:
 
     mapping_rows = build_or_update_mapping(rows, load_mapping(args.mapping), args.mode == "demo")
     mapping_by_key = {r["match_key"]: r for r in mapping_rows}
-    unknown_columns = classify_columns(list(rows[0].keys()) if rows else [], var_config, args.allow_technical_metadata, args.allow_free_text)[1]
-    if unknown_columns and args.mode == "production" and not args.allow_unknown_columns:
-        raise ValueError(
-            "Unknown/unclassified columns found in production mode. Review and classify them "
-            "before processing real data, or rerun with --allow-unknown-columns after documented review: "
-            + ", ".join(unknown_columns)
-        )
 
-    analysis_rows, analysis_fields = build_analysis(rows, mapping_by_key, var_config, args)
+    analysis_rows, analysis_fields, columns_review = build_analysis(rows, mapping_by_key, var_config, args)
     failures = attention_failures(analysis_rows, att_config)
     analysis_fields = analysis_fields + ["attention_correct_count", "attention_failed"]
     validate_analysis(analysis_fields, var_config)
+
+    qc_report_path = Path(args.qc_output).parent / "columns_review_.json"
+    qc_report_path.parent.mkdir(parents=True, exist_ok=True)
+    with qc_report_path.open("w", encoding="utf-8") as handle:
+        json.dump(columns_review, handle, indent=2)
 
     mapping_fields = ["match_key", "name_key", "email_key", "id", "pseudoID", "token", "firstname", "lastname", "email", "Name", "eMailIG", "eMailKG", "PhoneSystem", "studyGroup", "studyGroup_blind", "attribute_1", "attribute_2", "attribute_3", "attribute_4", "attribute_5", "attribute_6"]
     write_csv(args.mapping, mapping_rows, mapping_fields)
@@ -287,8 +354,6 @@ def main(argv: list[str] | None = None) -> int:
     qc_fields = ["pseudoID", "timePoint", "attention_correct_count", "attention_failed"] + list(att_config.get("columns", []))
     write_csv(args.qc_output, failures, qc_fields)
 
-    if unknown_columns:
-        print("WARNING: Unknown/unclassified columns require review and were excluded from default analysis output: " + ", ".join(unknown_columns), file=sys.stderr)
     return 0
 
 

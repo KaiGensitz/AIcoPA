@@ -46,16 +46,19 @@ the default pseudonymized analysis output.
 
 Exact dates, timestamps, LimeSurvey technical metadata, referrer URLs, response
 `*Time` columns, and free-text variables may be indirect identifiers. The script
-therefore excludes them from default analysis output unless explicitly allowed.
-Unknown columns generate a review warning in demo mode and fail production mode by default.
+therefore drops these fields from default analysis output unless the corresponding
+allow flags are explicitly passed.
+
+Regular closed-ended LimeSurvey response items are kept automatically by default.
+New item columns do not require script changes or config updates to be included in
+analysis output. The script still writes a QC review report called
+`columns_review_.json` next to `--qc-output` so you can inspect which columns were
+kept automatically and which were dropped.
 
 `config/variable_classification.json` is a **minimal demo/template config**,
-not a complete real-study T1/T2/T3 variable dictionary. Before processing real
-exports, all real LimeSurvey analysis variables must be reviewed and added to
-the config. Otherwise production mode will fail on unknown columns by default,
-or reviewed unknown columns will be excluded from the default analysis output.
-
-Variable handling is controlled by `config/variable_classification.json`:
+not a complete real-study T1/T2/T3 variable dictionary. The configured lists are
+still used for direct identifiers, technical metadata, and free-text/privacy-risky
+fields, but new regular closed-ended survey items are allowed automatically.
 
 - `analysis_allowlist`: variables allowed into default analysis output;
 - `direct_identifier_columns`: direct/contact/linkage fields that must not enter
