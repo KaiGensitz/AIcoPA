@@ -97,38 +97,6 @@ use `--allow-unknown-columns` after documenting that the excluded variables have
 been reviewed. `--mode demo` is restricted to synthetic/test paths because it
 uses deterministic IDs/tokens.
 
-## Handling individual participant data requests
-
-This workflow supports internal request handling for individual participant
-access or deletion requests. It is not a public release or automatic email
-service.
-
-- Requester identity must be verified manually before any data are sent.
-- The request email is used only against the sensitive mapping/contact file.
-- Processed pseudonymized files are matched by `pseudoID` only, not by email.
-- No automatic email sending is performed by this tool.
-- Generated outputs are sensitive and must remain outside version control.
-- Export packages should be reviewed manually before any external disclosure.
-
-Example usage:
-
-```bash
-python3 Data_Handling/scripts/generate_individual_data_export.py \
-  --request-email person@example.com \
-  --mapping Data_Handling/sensitive/survey_mapping_sensitive.csv \
-  --processed-files \
-    Data_Handling/processed/survey_pseudonymized_T1.csv \
-    Data_Handling/processed/survey_pseudonymized_T2.csv \
-    Data_Handling/processed/survey_pseudonymized_T3.csv \
-  --output-dir Data_Handling/sensitive/individual_data_requests \
-  --format both
-```
-
-The export package includes a review manifest, README, and participant-specific
-JSON/CSV files. Internal identifiers such as names, emails, and tokens are
-excluded by default; they may only be included with the explicit
-`--include-internal-identifiers` flag.
-
 Risk flags:
 
 - `--allow-technical-metadata` can reintroduce exact dates, timestamps, referrer
